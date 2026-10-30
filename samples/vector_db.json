@@ -1,0 +1,98 @@
+{
+  "question": "Compare the top 3 open-source vector databases for a startup building RAG products",
+  "short_answer": "Milvus is an open‑source, GPU‑accelerated vector database that can handle billions of vectors at lower cost but requires engineering resources. Weaviate provides a graph‑based vector store with a GraphQL API, modular design, hybrid search (vector + BM25 + metadata filters) and strong documentation. Qdrant is a budget‑conscious, Rust‑based vector database offering the best free tier, native sparse and multi‑vector model support, and excels at real‑time embedding search with rich JSON‑based payload filtering.",
+  "key_findings": [
+    {
+      "claim": "Milvus is an open‑source, GPU‑accelerated vector database optimized for massive scale and high‑throughput serving",
+      "source_id": "S4",
+      "quote": "Milvus (Zilliz Cloud): Open-source, GPU-accelerated vector DB. Optimized for massive scale and high-throughput serving.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Milvus can handle billions of vectors at lower cost but requires engineering resources",
+      "source_id": "S5",
+      "quote": "Milvus / Zilliz Cloud: billions of vectors at lower cost; requires engineering resources.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Weaviate is an open‑source graph‑based vector store with a GraphQL API and modular design",
+      "source_id": "S4",
+      "quote": "Weaviate: An open-source graph-based vector store. Features a GraphQL API and a modular design.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Qdrant is budget‑conscious, offers the best free tier, and supports native sparse and multi‑vector models",
+      "source_id": "S5",
+      "quote": "Qdrant: budget-conscious teams, best free tier, native sparse (SPLADE, miniCOIL) and ColBERT multi-vector support.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Qdrant is an open‑source Rust vector database that excels at real‑time embedding search with rich JSON‑based payload filtering",
+      "source_id": "S4",
+      "quote": "Qdrant: An open-source Rust vector database. Excels at real-time embedding search with rich JSON-based payload filtering.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Weaviate provides hybrid search (vector + BM25 + metadata filters) with strong documentation and modular embeddings",
+      "source_id": "S5",
+      "quote": "Weaviate: hybrid search (vector + BM25 + metadata filters) with strong docs and modular embeddings.",
+      "verified": true,
+      "support": "supported"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S4",
+      "url": "https://www.zenml.io/blog/vector-databases-for-rag",
+      "title": "We Tried and Tested 10 Best Vector Databases for RAG Pipelines - ZenML Blog",
+      "domain": "zenml.io",
+      "snippet": "## 4. Weaviate\n\n Screenshot of the Weaviate homepage presenting its open-source AI-native vector database \n\nWeaviate is an open-source, AI-native vector database built with a graph-like class schema. The design helps you scale and provide more flexibility in RAG workflows. It offers a rich feature set, including built-in vectorization modules and advanced search capabilities.\n\n### Features [...] Supports both dense vector similarity and BM25 keyword indexes, allowing RAG applications to combine ",
+      "text": "",
+      "relevance": 0.85,
+      "flags": [
+        "kind:independent_analysis"
+      ]
+    },
+    {
+      "id": "S5",
+      "url": "https://www.firecrawl.dev/blog/best-vector-databases",
+      "title": "Best Vector Databases in 2026: A Complete Comparison Guide",
+      "domain": "firecrawl.dev",
+      "snippet": "Performance backs up the convenience. Tests show 7ms p99 latency, which means 99% of your queries return in under 7 milliseconds. Compare that to Elasticsearch's 1600ms for exact kNN in the same benchmark. The serverless tier auto-scales, so you don't provision capacity. You use what you need, pay for what you use. [...] The implementation uses HNSW indexing with scalar and binary quantization. Performance shows sub-50ms query latency at 15.3 million vectors (with quantization, 90-95% accuracy).",
+      "text": "",
+      "relevance": 0.8,
+      "flags": [
+        "kind:independent_analysis"
+      ]
+    }
+  ],
+  "confidence": "medium",
+  "confidence_reasons": [
+    "6 of 6 drafted findings were verified in the source text and judged supported by their quote (100%).",
+    "They rest on 6 distinct quote(s) from 2 distinct site(s): firecrawl.dev, zenml.io.",
+    "2 of those site(s) are not vendor marketing or press releases.",
+    "Not higher because high needs 80%+ supported, 4+ distinct quotes, 3+ sites, 2+ independent sites."
+  ],
+  "limitations": [
+    "The sources do not include quantitative benchmark results (throughput, latency) or specific hardware requirements for any database",
+    "Community health metrics such as GitHub activity, issue response time, or documentation quality are not detailed in the sources",
+    "Sources are marketing‑oriented blog posts and may emphasize strengths while downplaying weaknesses",
+    "No direct comparison of deployment options (cloud, on‑prem, Kubernetes) is provided",
+    "3 candidate source(s) were dropped (quarantine, low relevance or cost cap); see the trace.",
+    "Assumption: \"Top\" is interpreted as most popular and well‑supported based on GitHub stars, recent benchmarks, and community activity",
+    "Assumption: The startup requires self‑hosted, open‑source solutions that integrate easily with LLM pipelines for RAG",
+    "Assumption: Timeframe is current (2026) and no proprietary licenses are considered",
+    "Quote verification is an exact-match check and the support check is an LLM judgment; neither guarantees that a claim is true."
+  ],
+  "next_steps": [
+    "Run standardized RAG workload benchmarks on Milvus, Weaviate, and Qdrant to gather latency, throughput, and hardware utilization data",
+    "Assess community health by reviewing GitHub repositories for stars, forks, recent commits, and issue resolution rates",
+    "Prototype integration of each database with the startup's LLM stack to evaluate API ease‑of‑use and metadata filtering capabilities",
+    "Estimate total cost of ownership for self‑hosting versus managed options based on required scaling and operational effort"
+  ]
+}
