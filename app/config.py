@@ -22,3 +22,4 @@ MIN_RELEVANCE = 0.4              # sources scoring below this are dropped
 MAX_SOURCES_FOR_SYNTHESIS = 6    # cost cap on what the synthesizer reads
 TRIAGE_EXCERPT_CHARS = 500       # how much of each page the triage step sees
 SYNTH_CHARS_PER_SOURCE = 3500    # how much of each page the synthesizer sees
+MIN_QUOTE_WORDS = 6   # a quote shorter than this can't verify a claim
