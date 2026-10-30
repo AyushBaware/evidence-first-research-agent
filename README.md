@@ -15,7 +15,7 @@ A production-minded AI research agent. Given a research-style question, it **pla
 
 ## Quick start
 
-**Requirements:** Python 3.11+ and API keys for an LLM provider (Groq; Gemini optional) and Tavily (search).
+**Requirements:** Python 3.11+ and API keys for an LLM provider (Groq) and Tavily (search).
 
 ```bash
 git clone https://github.com/<your-username>/evidence-first-research-agent.git
@@ -33,8 +33,13 @@ python scripts/check_setup.py   # verifies keys, LLM and search connectivity
 ```bash
 python -m app.cli "Compare the top 3 open-source vector databases for a startup building RAG products"
 ```
-python -m app.cli "your question" [--json] [--save samples/out.json]
-uvicorn app.main:app --reload     # then open http://127.0.0.1:8000/docs and POST /research
+**Options:** `--json` prints raw JSON, and `--save samples/out.json` also writes the JSON answer to a file.
+
+**Run (API):**
+```bash
+uvicorn app.main:app --reload
+```
+Then open `http://127.0.0.1:8000/docs` and call `POST /research` with `{"question": "..."}`. `GET /health` returns `{"status": "ok"}`.
 
 Every run writes a trace to `traces/<run_id>.jsonl`.
 
@@ -87,8 +92,7 @@ flowchart TD
 - `schemas.py`: all data shapes, defined once.
 - `tracing.py`: one JSONL line per event.
 - `eval/run_failures.py`: failure-injection harness. It patches the tools (not the agent), so the real retry, validation and quarantine code runs. Six scenarios: search down, malformed search payload, all page fetches fail, LLM provider down, obvious prompt injection, and a paraphrased injection that evades our patterns. Results are saved to `eval/failure_results.json`.
-- `eval/run_eval.py` and `eval/queries.yaml`: run the evaluation queries through the agent and a single-call LLM baseline, and write a metrics table.
-````
+
 
 **Stack:** Python, FastAPI, Pydantic v2, OpenAI-compatible SDK (Groq `openai/gpt-oss-120b`), Tavily search, `trafilatura` for page text extraction. No agent framework, on purpose, so the control flow is readable in about 300 lines.
 
@@ -162,7 +166,7 @@ Latency per stage and end to end; tool error and timeout rates; **citation verif
 | Verification | Exact quote match | Misses valid paraphrases (tradeoff: false negatives over hallucinations) |
 | Scope | One agent, two tools | Breadth (no memory, no multi-agent) |
 | Provider | Groq free tier | Possible rate limits |
-| Retries | Max 2-3 attempts, transient errors only | Slower recovery from a long provider outage |
+| Retries | Max 2-4 attempts, transient errors only | Slower recovery from a long provider outage |
 | Page text | Capped at 6000 characters per page | Evidence that appears deep in long pages |
 | Source filtering | LLM labels sources; code applies penalty and threshold | A fully LLM-judged ranking, which is harder to audit |
 | Injection handling | Quarantine (exclude) suspicious pages | Keeping security articles that quote attack phrases (false positives) |
@@ -191,7 +195,9 @@ Summary (5 queries, one run each, agent vs single-call LLM baseline):
 
 The agent's check is our own code, so it measures faithful copying, not truth. The agent cost roughly 5 to 15 times the tokens and 20 to 100 times the latency, part of it from the free-tier throttle.
 
-Sample outputs: [`samples/`](samples/). <!-- TODO(phase 9) -->
+Sample outputs: [`samples/vector_db.json`](samples/vector_db.json), [`samples/collections.json`](samples/collections.json), [`samples/insufficient_evidence.json`](samples/insufficient_evidence.json).
+
+Example traces (one JSON event per line): [`samples/example_traces/q1_vector_db_agent.jsonl`](samples/example_traces/q1_vector_db_agent.jsonl), [`samples/example_traces/injection_obvious.jsonl`](samples/example_traces/injection_obvious.jsonl).
 
 ## Known limitations
 - Exact-quote verification rejects correct paraphrases and fails on pages whose text extraction is lossy.

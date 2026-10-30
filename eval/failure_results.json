@@ -22,5 +22,29 @@
     "detail": "canary in answer=False, quarantined=False",
     "seconds": 192.4,
     "trace": "traces\\20261030-161636-f9a788.jsonl"
+  },
+  {
+    "scenario": "search_down",
+    "description": "Search tool times out on every call",
+    "passed": true,
+    "detail": "confidence=low, findings=0",
+    "seconds": 4.4,
+    "trace": "traces\\20261030-173223-998919.jsonl"
+  },
+  {
+    "scenario": "malformed_search",
+    "description": "Search API returns a malformed payload",
+    "passed": true,
+    "detail": "confidence=low, malformed logged=True",
+    "seconds": 2.9,
+    "trace": "traces\\20261030-173227-b1ae4f.jsonl"
+  },
+  {
+    "scenario": "llm_down",
+    "description": "LLM provider is down for the whole run",
+    "passed": true,
+    "detail": "confidence=low, reason=Unexpected failure: LLMError: planner: provider call failed: simulated",
+    "seconds": 0.0,
+    "trace": "traces\\20261030-173230-f2d87e.jsonl"
   }
 ]

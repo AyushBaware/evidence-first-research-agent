@@ -13,7 +13,6 @@ def check_env(name):
     return is_set
 
 
-check_env("GEMINI_API_KEY")
 check_env("GROQ_API_KEY")
 check_env("TAVILY_API_KEY")
 
@@ -24,7 +23,6 @@ from openai import OpenAI
 # Model names change over time; if one fails with "model not found",
 # check the current name in the Gemini/Groq console and edit it here.
 PROVIDERS = {
-    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai/", "GEMINI_API_KEY", "<flash model from the list>"),
     "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY", "openai/gpt-oss-120b"),
 }
 

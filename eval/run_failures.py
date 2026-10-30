@@ -110,8 +110,14 @@ def main() -> None:
         results.append({"scenario": name, "description": description, "passed": passed, "detail": detail,
                         "seconds": seconds, "trace": str(tracer.path) if tracer else None})
 
-    Path("eval").mkdir(exist_ok=True)
-    Path("eval/failure_results.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
+    out = Path("eval/failure_results.json")
+    out.parent.mkdir(exist_ok=True)
+    merged = {}
+    if out.exists():  # keep results from earlier runs, replace only the scenarios just re-run
+        merged = {r["scenario"]: r for r in json.loads(out.read_text(encoding="utf-8"))}
+    for r in results:
+        merged[r["scenario"]] = r
+    out.write_text(json.dumps(list(merged.values()), indent=2), encoding="utf-8")
     print("\nSUMMARY:", sum(r["passed"] for r in results), "of", len(results), "passed. Saved to eval/failure_results.json")
 
 
