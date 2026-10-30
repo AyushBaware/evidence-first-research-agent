@@ -92,6 +92,7 @@ flowchart TD
 - `schemas.py`: all data shapes, defined once.
 - `tracing.py`: one JSONL line per event.
 - `eval/run_failures.py`: failure-injection harness. It patches the tools (not the agent), so the real retry, validation and quarantine code runs. Six scenarios: search down, malformed search payload, all page fetches fail, LLM provider down, obvious prompt injection, and a paraphrased injection that evades our patterns. Results are saved to `eval/failure_results.json`.
+- `eval/run_eval.py` and `eval/queries.yaml`: run the evaluation queries through the agent and a single-call LLM baseline, and write a metrics table.
 
 
 **Stack:** Python, FastAPI, Pydantic v2, OpenAI-compatible SDK (Groq `openai/gpt-oss-120b`), Tavily search, `trafilatura` for page text extraction. No agent framework, on purpose, so the control flow is readable in about 300 lines.
@@ -198,6 +199,17 @@ The agent's check is our own code, so it measures faithful copying, not truth. T
 Sample outputs: [`samples/vector_db.json`](samples/vector_db.json), [`samples/collections.json`](samples/collections.json), [`samples/insufficient_evidence.json`](samples/insufficient_evidence.json).
 
 Example traces (one JSON event per line): [`samples/example_traces/q1_vector_db_agent.jsonl`](samples/example_traces/q1_vector_db_agent.jsonl), [`samples/example_traces/injection_obvious.jsonl`](samples/example_traces/injection_obvious.jsonl).
+
+## AI tool usage
+
+I used **Claude (Anthropic)** as a pair-programming and design assistant throughout this assignment, across two chat sessions.
+
+- **Design:** I discussed the assignment and the job description with Claude, then settled on a small custom planner-executor pipeline (no framework) with code-verified quotes, computed confidence and a failure-injection harness.
+- **Code:** Claude wrote most of the first drafts of the modules (schemas, tools, LLM wrapper, planner, executor, filtering, synthesizer, verifier, judge, CLI, API, eval scripts), with line-by-line explanations because I am newer to Python.
+- **Docs:** Claude drafted the README and `EVALUATION.md`; I applied them section by section and corrected them against real outputs.
+- **What I did myself:** set up the environment and API keys, ran every phase and test, debugged real errors (model names, DNS, rate limits), chose between options, and ran the evaluation and failure scenarios. All numbers in the evaluation come from my own runs.
+
+Real run results changed the design several times (for example the Groq rate limit led to the token throttle, and an over-claimed finding led to the claim-support judge). I can explain each module and decision in the repository.
 
 ## Known limitations
 - Exact-quote verification rejects correct paraphrases and fails on pages whose text extraction is lossy.
