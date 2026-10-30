@@ -2,6 +2,8 @@ import time
 
 from app.executor import gather
 from app.filtering import filter_sources
+from app.judge import judge_findings, write_short_answer
+from app.llm import LLMError
 from app.planner import make_plan
 from app.schemas import FinalAnswer
 from app.synthesizer import synthesize
@@ -41,32 +43,59 @@ def run_research(question: str) -> tuple[FinalAnswer, Tracer]:
 
         draft = synthesize(question, plan, filtered.kept, tracer)
 
+        # Check 1 (code): does each quote exist in its source?
         verified, rejected = verify_findings(draft, filtered.kept)
         tracer.log("verification", verified=len(verified), rejected=rejected)
-        level, reasons = compute_confidence(verified, len(draft.key_findings), filtered.kept)
 
         limitations = list(draft.limitations) + notes + [f"Assumption: {a}" for a in plan.assumptions]
-        if rejected:
+
+        # Check 2 (LLM judge, sees only claim + quote): does the quote support the claim?
+        judged = True
+        try:
+            checked, unsupported = judge_findings(verified, tracer)
+        except LLMError as e:
+            checked, unsupported, judged = verified, [], False
+            tracer.log("judge_failed", error=str(e)[:300])
+            limitations.append("The claim-support check was unavailable, so confidence is capped at medium.")
+
+        level, reasons = compute_confidence(checked, len(draft.key_findings), filtered.kept, judged=judged)
+
+        removed = len(rejected) + len(unsupported)
+        if removed:
             limitations.append(
-                f"{len(rejected)} of {len(draft.key_findings)} drafted findings were removed because their quotes "
-                "could not be verified. The short answer was written before verification and may still mention them."
+                f"{removed} of {len(draft.key_findings)} drafted findings were removed: {len(rejected)} had quotes that "
+                f"could not be verified in the source, and {len(unsupported)} had quotes that did not support the claim."
             )
-        limitations.append("Verification confirms each quote exists in its source; it does not prove the claim follows from the quote.")
+        partial = sum(1 for f in checked if f.support == "partial")
+        if partial:
+            limitations.append(f"{partial} finding(s) are only partially supported by their quote and do not count toward confidence.")
+        limitations.append(
+            "Quote verification is an exact-match check and the support check is an LLM judgment; "
+            "neither guarantees that a claim is true."
+        )
 
-        short = draft.short_answer
-        if len(verified) < 2:
-            short = INSUFFICIENT + " Any partial findings are listed below."
-        elif level == "low":
-            short = "Low confidence: " + short
+        # Short answer is regenerated from checked findings only.
+        supported = [f for f in checked if f.support == "supported"] if judged else list(checked)
+        if len(supported) < 2:
+            short = INSUFFICIENT + " Any partially supported findings are listed below."
+        else:
+            try:
+                short = write_short_answer(question, supported, tracer)
+            except LLMError as e:
+                tracer.log("short_answer_failed", error=str(e)[:300])
+                short = draft.short_answer
+                limitations.append("The short answer could not be regenerated from checked findings and may include unverified statements.")
+            if level == "low":
+                short = "Low confidence: " + short
 
-        cited = {f.source_id for f in verified}
+        cited = {f.source_id for f in checked}
         sources_out = [s.model_copy(update={"text": ""}) for s in filtered.kept if s.id in cited]  # drop bulky page text
 
         answer = FinalAnswer(
-            question=question, short_answer=short, key_findings=verified, sources=sources_out,
+            question=question, short_answer=short, key_findings=checked, sources=sources_out,
             confidence=level, confidence_reasons=reasons, limitations=limitations, next_steps=draft.next_steps,
         )
-        tracer.log("run_done", confidence=level, verified=len(verified), seconds=round(time.time() - started, 1))
+        tracer.log("run_done", confidence=level, findings=len(checked), seconds=round(time.time() - started, 1))
         return answer, tracer
     except Exception as e:  # last line of defence: the caller always gets a valid answer object
         return _failed(question, f"Unexpected failure: {type(e).__name__}: {e}", tracer), tracer

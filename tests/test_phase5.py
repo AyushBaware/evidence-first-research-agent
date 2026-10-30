@@ -26,7 +26,8 @@ def fake_sources(n, flags=None):
 
 
 def fake_findings(ids):
-    return [Finding(claim="c", source_id=i, quote="q", verified=True) for i in ids]
+    return [Finding(claim="c", source_id=i, quote=f"distinct quote number {k}", verified=True, support="supported")
+            for k, i in enumerate(ids)]
 
 
 level, _ = compute_confidence(fake_findings(["S1", "S1", "S1", "S1"]), 4, fake_sources(1))
@@ -37,6 +38,8 @@ level, _ = compute_confidence(fake_findings(["S1", "S2", "S3", "S3"]), 4, fake_s
 assert level == "high"
 level, _ = compute_confidence(fake_findings(["S1", "S2", "S3", "S3"]), 4, fake_sources(3, ["kind:vendor_marketing"]))
 assert level == "medium"       # three sites, but none independent of vendor marketing
+level, _ = compute_confidence(fake_findings(["S1", "S2", "S3", "S3"]), 4, fake_sources(3), judged=False)
+assert level == "medium"       # without the support check, "high" is capped
 print("2. confidence rules OK (one site=low, two=medium, three independent=high, vendor-only=medium)")
 
 # ---------- Full pipeline ----------

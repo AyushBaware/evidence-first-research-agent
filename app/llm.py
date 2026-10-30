@@ -10,6 +10,8 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 from app import config
 from app.tracing import Tracer
 
+from collections import deque
+
 
 class LLMError(Exception):
     """Raised when the provider fails or never returns valid JSON."""
@@ -27,8 +29,8 @@ _TRANSIENT = (APIConnectionError, APITimeoutError, RateLimitError, InternalServe
 
 
 @retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    wait=wait_exponential(multiplier=2, min=2, max=20),
     retry=retry_if_exception_type(_TRANSIENT),
     reraise=True,
 )
@@ -54,6 +56,29 @@ def _clean(raw: str) -> str:
     return raw[start:end + 1] if start != -1 and end > start else raw
 
 
+_usage: deque = deque()  # (timestamp, tokens) for calls made in the last minute
+
+
+def _throttle(messages: list[dict], tracer: Tracer | None = None) -> None:
+    """Wait if this call would push us over the tokens-per-minute budget."""
+    estimate = sum(len(m["content"]) for m in messages) // 3 + 1500  # input tokens + room for the reply
+    while True:
+        now = time.time()
+        while _usage and now - _usage[0][0] > 60:
+            _usage.popleft()                      # forget calls older than a minute
+        used = sum(tokens for _, tokens in _usage)
+        if not _usage or used + estimate <= config.TPM_BUDGET:
+            return
+        wait = 60 - (now - _usage[0][0]) + 0.5    # until the oldest call leaves the window
+        if tracer:
+            tracer.log("throttle_wait", seconds=round(wait, 1), used=used, estimate=estimate)
+        time.sleep(min(max(wait, 1), 30))
+
+
+def _record(tokens: int) -> None:
+    _usage.append((time.time(), tokens))
+
+
 def chat_json(system: str, user: str, schema: type[BaseModel], tracer: Tracer | None = None,
               label: str = "llm", max_repairs: int = 1) -> BaseModel:
     """Ask the LLM for JSON matching `schema`. Validates; on bad JSON, asks once to repair."""
@@ -68,17 +93,17 @@ def chat_json(system: str, user: str, schema: type[BaseModel], tracer: Tracer | 
     for attempt in range(max_repairs + 1):
         start = time.time()
         try:
+            _throttle(messages, tracer)
             try:
                 raw, tokens_in, tokens_out = _call(messages, json_mode)
             except BadRequestError as e:
-                # The provider's strict JSON mode rejected the output. Retry in plain mode and
-                # let OUR Pydantic validation (and repair step) decide whether it is usable.
                 if not json_mode or "json" not in str(e).lower():
                     raise
                 json_mode = False
                 if tracer:
                     tracer.log("llm_json_mode_rejected", label=label, error=str(e)[:300])
                 raw, tokens_in, tokens_out = _call(messages, json_mode)
+            _record(tokens_in + tokens_out)
         except Exception as e:
             if tracer:
                 tracer.log("llm_error", label=label, error=str(e)[:300])

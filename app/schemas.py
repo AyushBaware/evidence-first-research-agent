@@ -41,6 +41,7 @@ class Finding(BaseModel):
     source_id: str                     # must match a Source.id
     quote: str                         # verbatim text from that source
     verified: bool = False             # set by OUR code, not by the LLM
+    support: Literal["supported", "partial", "unchecked"] = "unchecked"  # set by the judge step
 
 
 class SynthesisDraft(BaseModel):

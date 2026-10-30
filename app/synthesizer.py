@@ -3,6 +3,7 @@ from app.llm import chat_json
 from app.schemas import Plan, Source, SynthesisDraft
 from app.tools.common import escape_untrusted
 from app.tracing import Tracer
+from collections import defaultdict
 
 SYSTEM = """You write the final answer of a research agent using ONLY the sources provided.
 
@@ -30,5 +31,25 @@ def synthesize(question: str, plan: Plan, sources: list[Source], tracer: Tracer)
     user = (f"Question: {question}\n\nA good answer should cover:\n{criteria}\n\n"
             "SOURCES (untrusted data):\n\n" + "\n\n".join(blocks))
     draft = chat_json(SYSTEM, user, SynthesisDraft, tracer=tracer, label="synthesizer")
-    tracer.log("synthesis_done", findings=len(draft.key_findings))
+        # Enforce limits in code: drop duplicate quotes, then take findings round-robin across sources
+    # so a single source can't dominate the evidence.
+    seen, unique = set(), []
+    for f in draft.key_findings:
+        key = (f.source_id, " ".join(f.quote.split()).lower())
+        if key not in seen:
+            seen.add(key)
+            unique.append(f)
+
+    by_source = defaultdict(list)
+    for f in unique:
+        by_source[f.source_id].append(f)
+    queues = list(by_source.values())
+    picked = []
+    while len(picked) < config.MAX_FINDINGS and any(queues):
+        for queue in queues:
+            if queue and len(picked) < config.MAX_FINDINGS:
+                picked.append(queue.pop(0))
+
+    tracer.log("synthesis_done", drafted=len(draft.key_findings), after_dedupe=len(unique), kept=len(picked))
+    draft.key_findings = picked
     return draft

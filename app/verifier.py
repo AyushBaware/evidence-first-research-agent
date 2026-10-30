@@ -42,25 +42,35 @@ def verify_findings(draft: SynthesisDraft, sources: list[Source]) -> tuple[list[
     return verified, rejected
 
 
-def compute_confidence(verified: list[Finding], total: int, sources: list[Source]) -> tuple[str, list[str]]:
+def compute_confidence(findings: list[Finding], total: int, sources: list[Source], judged: bool = True) -> tuple[str, list[str]]:
     """Confidence from evidence signals, never from the LLM's own opinion."""
     by_id = {s.id: s for s in sources}
-    cited = {f.source_id for f in verified}
+    counted = [f for f in findings if f.support == "supported"] if judged else list(findings)
+    evidence = {(f.source_id, normalize(f.quote)) for f in counted}   # distinct (source, quote) pairs
+    cited = {f.source_id for f in counted}
     sites = {site_of(by_id[i].url) for i in cited}
     independent = {site_of(by_id[i].url) for i in cited if not (set(by_id[i].flags) & WEAK_KINDS)}
-    ratio = len(verified) / total if total else 0.0
+    ratio = len(counted) / total if total else 0.0
+    n = len(evidence)
 
+    how = ("verified in the source text and judged supported by their quote" if judged
+           else "verified in the source text (claim-support check unavailable)")
     reasons = [
-        f"{len(verified)} of {total} drafted findings had their quote verified in the source text ({ratio:.0%}).",
-        f"Verified findings rest on {len(sites)} distinct site(s): {', '.join(sorted(sites)) or 'none'}.",
+        f"{len(counted)} of {total} drafted findings were {how} ({ratio:.0%}).",
+        f"They rest on {n} distinct quote(s) from {len(sites)} distinct site(s): {', '.join(sorted(sites)) or 'none'}.",
         f"{len(independent)} of those site(s) are not vendor marketing or press releases.",
     ]
 
-    if ratio >= 0.8 and len(verified) >= 4 and len(sites) >= 3 and len(independent) >= 2:
-        return "high", reasons
-    if ratio >= 0.5 and len(verified) >= 3 and len(sites) >= 2:
-        level, needs = "medium", "high needs 80%+ verified, 4+ findings, 3+ sites, 2+ independent sites"
+    needs = None
+    if ratio >= 0.8 and n >= 4 and len(sites) >= 3 and len(independent) >= 2:
+        level = "high"
+    elif ratio >= 0.5 and n >= 3 and len(sites) >= 2:
+        level, needs = "medium", "high needs 80%+ supported, 4+ distinct quotes, 3+ sites, 2+ independent sites"
     else:
-        level, needs = "low", "medium needs 50%+ verified, 3+ findings, 2+ sites"
-    reasons.append(f"Not higher because {needs}.")
+        level, needs = "low", "medium needs 50%+ supported, 3+ distinct quotes, 2+ sites"
+    if needs:
+        reasons.append(f"Not higher because {needs}.")
+    if not judged and level == "high":
+        level = "medium"
+        reasons.append("Capped at medium because the claim-support check was unavailable.")
     return level, reasons
