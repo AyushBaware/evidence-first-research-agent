@@ -2,7 +2,8 @@ import json
 import re
 import time
 
-from openai import APIConnectionError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
+from openai import (APIConnectionError, APITimeoutError, BadRequestError,
+                    InternalServerError, OpenAI, RateLimitError)
 from pydantic import BaseModel, ValidationError
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -31,12 +32,15 @@ _TRANSIENT = (APIConnectionError, APITimeoutError, RateLimitError, InternalServe
     retry=retry_if_exception_type(_TRANSIENT),
     reraise=True,
 )
-def _call(messages: list[dict]) -> tuple[str, int, int]:
+def _call(messages: list[dict], json_mode: bool = True) -> tuple[str, int, int]:
+    # In JSON mode the provider validates the output itself and can reject it with a 400.
+    extra = {"response_format": {"type": "json_object"}} if json_mode else {}
     response = _client.chat.completions.create(
         model=config.LLM_MODEL,
         messages=messages,
         temperature=0,  # as deterministic as possible
-        response_format={"type": "json_object"},
+        max_tokens=config.LLM_MAX_TOKENS,
+        **extra,
     )
     content = response.choices[0].message.content or ""
     usage = response.usage
@@ -44,8 +48,10 @@ def _call(messages: list[dict]) -> tuple[str, int, int]:
 
 
 def _clean(raw: str) -> str:
-    """Remove ```json fences some models add around JSON."""
-    return re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    """Strip ```json fences and any text around the outermost { ... }."""
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    start, end = raw.find("{"), raw.rfind("}")
+    return raw[start:end + 1] if start != -1 and end > start else raw
 
 
 def chat_json(system: str, user: str, schema: type[BaseModel], tracer: Tracer | None = None,
@@ -57,11 +63,22 @@ def chat_json(system: str, user: str, schema: type[BaseModel], tracer: Tracer | 
                                       f"No prose, no markdown.\nSchema: {schema_json}"},
         {"role": "user", "content": user},
     ]
+    json_mode = True
     last_error = ""
     for attempt in range(max_repairs + 1):
         start = time.time()
         try:
-            raw, tokens_in, tokens_out = _call(messages)
+            try:
+                raw, tokens_in, tokens_out = _call(messages, json_mode)
+            except BadRequestError as e:
+                # The provider's strict JSON mode rejected the output. Retry in plain mode and
+                # let OUR Pydantic validation (and repair step) decide whether it is usable.
+                if not json_mode or "json" not in str(e).lower():
+                    raise
+                json_mode = False
+                if tracer:
+                    tracer.log("llm_json_mode_rejected", label=label, error=str(e)[:300])
+                raw, tokens_in, tokens_out = _call(messages, json_mode)
         except Exception as e:
             if tracer:
                 tracer.log("llm_error", label=label, error=str(e)[:300])
@@ -83,7 +100,7 @@ def chat_json(system: str, user: str, schema: type[BaseModel], tracer: Tracer | 
 
         if tracer:
             tracer.log("llm_call", label=label, attempt=attempt, latency_s=latency,
-                       tokens_in=tokens_in, tokens_out=tokens_out)
+                       tokens_in=tokens_in, tokens_out=tokens_out, json_mode=json_mode)
         return result
 
     raise LLMError(f"{label}: no valid JSON after {max_repairs + 1} attempts: {last_error}")
