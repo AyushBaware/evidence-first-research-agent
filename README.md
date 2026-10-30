@@ -44,7 +44,7 @@ Input: a question. Output (JSON, validated by Pydantic):
 |---|---|
 | `question` | The user question |
 | `short_answer` | 2-4 sentence answer |
-| `key_findings` | Claims, each with `source_id`, a verbatim `quote`, and a `verified` flag set by our code |
+| `key_findings` | Claims, each with `source_id`, a verbatim `quote`, a `verified` flag (quote found in the source, set by our code) and a `support` label (`supported` or `partial`, from the judge) |
 | `sources` | Sources actually used, with domain, relevance score and flags |
 | `confidence` | `high` / `medium` / `low`, computed from evidence signals |
 | `confidence_reasons` | Why that level was assigned |
@@ -59,10 +59,11 @@ flowchart TD
     P --> E[Executor loop: step budget + timeouts]
     E -->|web_search| S[(Tavily)]
     E -->|fetch_page| F[(Web pages)]
-    E --> FL[Source filter: relevance, dedupe, injection flags]
+    E -->     FL[Source filter: injection quarantine, relevance and source-type triage]
     FL --> SY[Synthesizer: findings with source_id + quote]
-    SY --> V[Verifier: quote-in-source check, computed confidence]
-    V --> A[Final structured answer]
+    SY --> V[Verifier: code checks each quote exists in its source]
+    V --> J[Claim judge: does the quote support the claim?]
+    J --> A[Final answer: computed confidence, short answer rebuilt from supported findings]
     E -.-> T[(JSONL trace)]
     SY -.-> T
     V -.-> T
@@ -74,10 +75,13 @@ flowchart TD
 - `executor.py`: runs the plan with the tools under step budgets and per-call timeouts, and logs every tool decision.
 - `tools/search.py`, `tools/fetch.py`: the two tools. They never raise; they return a `ToolResult` with `ok`, `data`, `error` and latency.
 - `tools/common.py`: shared helpers (site extraction, transient-error classification, prompt-safe escaping).
-- `filtering.py`: scores and dedupes sources, drops weak ones, flags suspicious content.
-- `synthesizer.py`: asks the LLM for a draft answer constrained to the provided sources.
-- `verifier.py`: checks quotes against source text and computes confidence.
-- `llm.py`: provider wrapper with timeouts, bounded retries and structured-output parsing.
+- `filtering.py`: quarantines pages with prompt-injection patterns, then asks the LLM (one batched call) to label each source's relevance to the success criteria and its type. Our code applies the policy: vendor-marketing and press-release sources are down-weighted, weak ones dropped, and at most 6 kept. If triage fails, sources are kept unscored and a limitation is recorded.
+- `synthesizer.py`: asks the LLM for a draft answer from the kept sources only, wrapped as untrusted data. Each finding must carry a source id and a verbatim quote.
+- `verifier.py`: normalises text and checks that each finding's quote exists in its source, then computes confidence from evidence signals.
+- `judge.py`: a separate LLM call that sees only a finding's claim and quote and labels it supported, partial or unsupported; also rebuilds the short answer from supported findings.
+- `agent.py`: the pipeline. It wires every stage together and never raises: any failure becomes a valid low-confidence answer.
+- `llm.py`: provider wrapper with explicit timeouts, bounded retries, a client-side tokens-per-minute throttle, JSON-schema validation and one repair attempt on malformed output.
+- `cli.py`, `main.py`: command-line and FastAPI (`POST /research`, `GET /health`) entry points.
 - `schemas.py`: all data shapes, defined once.
 - `tracing.py`: one JSONL line per event.
 
@@ -112,15 +116,18 @@ Tool selection is rule-based inside the loop. The LLM does not choose tools mid-
 <!-- TODO(phase 5): add the low-confidence "insufficient evidence" behaviour and wire executor notes into the final limitations -->
 
 ### How do you reduce hallucinations?
-1. The synthesizer sees **only** the filtered sources, labelled `S1..Sn`.
-2. Every finding must carry a `source_id` and a **verbatim quote**.
-3. **Our code, not the LLM,** checks that the quote appears in that source's text. Unverified findings are dropped or flagged.
-4. Confidence is **computed** from signals (verified-quote ratio, number of independent domains, source agreement). The LLM never rates its own confidence.
-5. Low confidence triggers an explicit "insufficient evidence" answer.
-<!-- TODO(phase 5): add measured citation-validity rate from the eval -->
+1. Sources are filtered before synthesis: pages matching prompt-injection patterns are quarantined, and each source is labelled by relevance and type. Vendor and press-release sources are down-weighted by code, not by the model.
+2. The synthesizer sees **only** the kept sources, labelled `S1..Sn` and wrapped as untrusted data.
+3. Every finding must carry a `source_id` and a **verbatim quote**.
+4. **Our code, not the LLM,** checks that each quote appears in its source, after normalising whitespace, dashes and quotation marks. Quotes under 6 words are rejected. Failing findings are removed.
+5. A separate **judge** call sees only a finding's claim and quote (no sources, no question) and labels it `supported`, `partial` or `unsupported`. Unsupported findings are removed; partial ones stay visible but do not count toward confidence. This catches overreach, for example "fastest" backed by a quote that shows one product's numbers.
+6. Findings are de-duplicated and capped at 8, taken round-robin across sources so one source cannot dominate.
+7. Confidence is **computed** from distinct supported quotes, distinct sites and independence from vendor sources, never self-reported. High needs 80%+ supported, 4+ distinct quotes, 3+ sites and 2+ non-vendor sites; medium needs 50%+, 3+ quotes and 2+ sites; otherwise low. If the judge is unavailable, confidence is capped at medium.
+8. The short answer is rebuilt from supported findings only. With fewer than 2 supported findings the answer is "Insufficient verified evidence".
+<!-- TODO(phase 7): add measured citation-validity rate from the eval -->
 
 ### Prompt-injection awareness
-Fetched web content is untrusted. It is passed to the LLM inside delimited data blocks with instructions never to follow commands found in content, and our tool layer flags injection-like patterns on the source. Tools are **read-only** (no email, no writes, no code execution), so the blast radius of a successful injection is limited to a degraded answer. Fetching also refuses non-HTTP(S) schemes, `localhost` and private or loopback IP addresses (basic SSRF protection). A deliberate injection test is part of the eval. <!-- TODO(phase 5/7): report test result honestly -->
+Fetched web content is untrusted. It is passed to the LLM inside delimited data blocks with instructions never to follow commands found in content, and our tool layer flags injection-like patterns on the source. Tools are **read-only** (no email, no writes, no code execution), so the blast radius of a successful injection is limited to a degraded answer. Fetching also refuses non-HTTP(S) schemes, `localhost` and private or loopback IP addresses (basic SSRF protection). Pages matching known injection patterns (for example "ignore previous instructions") are quarantined: they are excluded before any LLM call and recorded in the trace. Source text is also escaped so it cannot close the `<source>` tags that wrap it in prompts. A deliberate injection test is part of the eval. <!-- TODO(phase 5/7): report test result honestly -->
 
 ### How would you make this production-ready?
 - Async tool execution and parallel fetches; a real queue and worker for long runs.
@@ -145,7 +152,11 @@ Latency per stage and end to end; tool error and timeout rates; **citation verif
 | Provider | Groq free tier | Possible rate limits |
 | Retries | Max 2-3 attempts, transient errors only | Slower recovery from a long provider outage |
 | Page text | Capped at 6000 characters per page | Evidence that appears deep in long pages |
-| Tool selection | Rule-based executor with budgets; the LLM plans queries only | Adaptive, LLM-chosen tool use mid-run |
+| Source filtering | LLM labels sources; code applies penalty and threshold | A fully LLM-judged ranking, which is harder to audit |
+| Injection handling | Quarantine (exclude) suspicious pages | Keeping security articles that quote attack phrases (false positives) |
+| Claim checking | Exact-quote check in code plus an LLM judge on claim and quote | One extra LLM call per run; the judge can be wrong |
+| Rate limits | Client-side throttle (7,000 tokens/minute) after hitting the Groq free-tier limit in testing | Slower runs |
+| Findings | Capped at 8, round-robin across sources | Depth from a single rich source |
 <!-- TODO: add anything we actually hit while building -->
 
 ## Evaluation
@@ -168,11 +179,19 @@ Sample outputs: [`samples/`](samples/). <!-- TODO(phase 9) -->
 - Free-tier LLM rate limits can slow or fail runs.
 - Paywalled or JS-rendered pages cannot be fetched.
 - Gemini fallback is not implemented: its OpenAI-compatible endpoint timed out during testing, so Groq is the only provider.
+- Triage relevance comes from a single LLM call, so useful sources can be dropped and weak ones kept. Every drop and its reason is logged in the trace.
+- Injection quarantine uses pattern matching, so it produces false positives and misses paraphrased attacks.
+- The short answer is rebuilt from supported findings by an LLM and is not re-checked claim by claim. The judge sees only a claim and its quote, and both LLM checks can be wrong.
+- Confidence measures evidence quality, not coverage of the question. In one test run only two of the three requested databases were found and the answer said so, yet confidence was medium.
+- Planning is single-pass: the planner cannot name candidates it only discovers after searching (for example which three databases are "top"), so coverage varies between runs.
+- Search results vary run to run, so outputs are not exactly reproducible.
+- On the Groq free tier (8,000 tokens/minute) the throttle slows runs to around 2-3 minutes.
 
 ## Future improvements
 - Async/parallel tool calls and caching.
 - LLM-judge evaluator step and a larger regression suite.
 - Semantic (not only exact) quote verification.
 - Follow-up question memory.
+- Adaptive re-planning: after a first search pass, name the candidates found and run targeted searches for each, and lower confidence when coverage of the question is incomplete.
 - Observability integration (Langfuse/OpenTelemetry).
 - Provider fallback chain (Gemini as secondary).
