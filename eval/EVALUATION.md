@@ -73,4 +73,4 @@ The tools are patched, not the agent, so the real retry, validation and quaranti
 - No clarity or gibberish check on the input.
 - Pattern-based injection detection misses paraphrased attacks.
 - Confidence measures evidence quality, not whether the question was fully covered.
-- Small sample, single runs, free-tier rate limits.
+- Small sample, single runs, free-tier rate limits.r
