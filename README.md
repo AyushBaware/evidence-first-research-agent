@@ -209,7 +209,7 @@ I used **Claude (Anthropic)** as a pair-programming and design assistant through
 - **Docs:** Claude drafted the README and `EVALUATION.md`; I applied them section by section and corrected them against real outputs.
 - **What I did myself:** set up the environment and API keys, ran every phase and test, debugged real errors (model names, DNS, rate limits), chose between options, and ran the evaluation and failure scenarios. All numbers in the evaluation come from my own runs.
 
-Real run results changed the design several times (for example the Groq rate limit led to the token throttle, and an over-claimed finding led to the claim-support judge). I can explain each module and decision in the repository.
+Real run results changed thee design several times (for example the Groq rate limit led to the token throttle, and an over-claimed finding led to the claim-support judge). I can explain each module and decision in the repository.
 
 ## Known limitations
 - Exact-quote verification rejects correct paraphrases and fails on pages whose text extraction is lossy.
