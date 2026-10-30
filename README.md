@@ -25,6 +25,7 @@ python -m venv .venv
 pip install -r requirements.txt
 cp .env.example .env     # Windows: copy .env.example .env  -> then add your keys
 python scripts/check_setup.py   # verifies keys, LLM and search connectivity
+**Environment variables** (`.env`): `GROQ_API_KEY` and `TAVILY_API_KEY` are required. `LLM_BASE_URL` and `LLM_MODEL` are optional and default to Groq and `openai/gpt-oss-120b`. Model names are configuration, not code, because providers retire models often.
 ```
 
 **Run (CLI):**
@@ -68,9 +69,11 @@ flowchart TD
 ```
 
 **Components** (all in `app/`):
-- `planner.py`: turns the question into a bounded plan (max 4 sub-tasks).
-- `executor.py`: runs the plan with the tools under a step budget and per-call timeouts.
-- `tools/search.py`, `tools/fetch.py`: the two tools (below).
+- `config.py`: all settings, timeouts and budgets in one place.
+- `planner.py`: turns the question into a bounded plan (max 4 sub-tasks, max 2 queries each). Limits are enforced in code, not trusted to the model.
+- `executor.py`: runs the plan with the tools under step budgets and per-call timeouts, and logs every tool decision.
+- `tools/search.py`, `tools/fetch.py`: the two tools. They never raise; they return a `ToolResult` with `ok`, `data`, `error` and latency.
+- `tools/common.py`: shared helpers (site extraction, transient-error classification, prompt-safe escaping).
 - `filtering.py`: scores and dedupes sources, drops weak ones, flags suspicious content.
 - `synthesizer.py`: asks the LLM for a draft answer constrained to the provided sources.
 - `verifier.py`: checks quotes against source text and computes confidence.
@@ -89,15 +92,24 @@ Research questions need **dynamic retrieval**: the number of searches and which 
 - **`web_search`** (Tavily): finds candidate sources and returns titles, URLs and snippets.
 - **`fetch_page`**: downloads a page and extracts clean text. Snippets alone are too shallow to verify claims against, so evidence is read from the full text.
 
-The executor chooses between them per sub-task (e.g. search first, then fetch only the top candidates). <!-- TODO(phase 3): describe the actual selection logic once implemented -->
+The planner (LLM) decides *what* to research: 2-4 sub-tasks with search queries. The executor (plain code under hard budgets) decides *where to look*, and logs every decision as a `tool_decision` trace event with its reason:
+
+1. Run up to 2 planner queries per sub-task with `web_search`.
+2. If a sub-task yields fewer than 2 unique results, retry once with the sub-task question itself as the query.
+3. Rank candidates by search score and read the top pages with `fetch_page`: at most 2 pages per sub-task and 2 per site, skipping duplicates.
+4. If no page can be read for a sub-task, fall back to the search snippet, labelled `snippet_only`, and record a note.
+5. Budgets per run: 7 searches and 12 page-fetch attempts.
+
+Tool selection is rule-based inside the loop. The LLM does not choose tools mid-run, a deliberate tradeoff for predictability and lower cost.
 
 ### How does the system handle bad tool results?
-- **Timeouts and bounded retries** with backoff on every network call; a hung call cannot hang a run.
-- **Schema validation** of tool output; malformed output is logged and skipped, not trusted.
-- **Fallbacks:** a failed fetch moves on to the next source; a failed search retries with a reworded query.
-- **Graceful degradation:** if too little evidence survives filtering, the system returns a `low` confidence answer that says so, rather than guessing.
-- **Step and cost budget** caps total tool calls per run.
-<!-- TODO(phase 5): confirm each item is actually implemented; remove any that are not -->
+- **Explicit timeouts and bounded retries.** Every network call has a timeout. Retries use exponential backoff and fire only for transient errors (timeouts, connection errors, HTTP 429 and 5xx); a 404 or an unsupported content type fails immediately. The OpenAI SDK's silent retries are disabled so every retry is visible.
+- **Validation of tool output.** Search results with a missing or invalid URL or title are skipped. Pages must be HTML or plain text, are capped at 2 MB downloaded and 6000 characters kept, and must yield at least 200 characters of extractable text.
+- **Tools never raise.** A failure comes back as `ToolResult(ok=False, error=...)`, so one bad call cannot crash a run.
+- **Fallbacks.** A failed page fetch moves on to the next candidate; a thin or failed search retries with the sub-task question as the query. In the Phase 3 test runs, 4 of 10 and 2 of 10 page fetches failed and both runs completed normally.
+- **Graceful degradation.** If no page can be read for a sub-task, the executor uses the search snippet, labelled `snippet_only`, and records a note.
+- **Budgets.** A run is capped at 7 searches and 12 page-fetch attempts.
+<!-- TODO(phase 5): add the low-confidence "insufficient evidence" behaviour and wire executor notes into the final limitations -->
 
 ### How do you reduce hallucinations?
 1. The synthesizer sees **only** the filtered sources, labelled `S1..Sn`.
@@ -108,7 +120,7 @@ The executor chooses between them per sub-task (e.g. search first, then fetch on
 <!-- TODO(phase 5): add measured citation-validity rate from the eval -->
 
 ### Prompt-injection awareness
-Fetched web content is untrusted. It is passed to the LLM inside delimited data blocks with instructions never to follow commands found in content, and our tool layer flags injection-like patterns on the source. Tools are **read-only** (no email, no writes, no code execution), so the blast radius of a successful injection is limited to a degraded answer. A deliberate injection test is part of the eval. <!-- TODO(phase 5/7): report test result honestly -->
+Fetched web content is untrusted. It is passed to the LLM inside delimited data blocks with instructions never to follow commands found in content, and our tool layer flags injection-like patterns on the source. Tools are **read-only** (no email, no writes, no code execution), so the blast radius of a successful injection is limited to a degraded answer. Fetching also refuses non-HTTP(S) schemes, `localhost` and private or loopback IP addresses (basic SSRF protection). A deliberate injection test is part of the eval. <!-- TODO(phase 5/7): report test result honestly -->
 
 ### How would you make this production-ready?
 - Async tool execution and parallel fetches; a real queue and worker for long runs.
@@ -131,6 +143,9 @@ Latency per stage and end to end; tool error and timeout rates; **citation verif
 | Verification | Exact quote match | Misses valid paraphrases (tradeoff: false negatives over hallucinations) |
 | Scope | One agent, two tools | Breadth (no memory, no multi-agent) |
 | Provider | Groq free tier | Possible rate limits |
+| Retries | Max 2-3 attempts, transient errors only | Slower recovery from a long provider outage |
+| Page text | Capped at 6000 characters per page | Evidence that appears deep in long pages |
+| Tool selection | Rule-based executor with budgets; the LLM plans queries only | Adaptive, LLM-chosen tool use mid-run |
 <!-- TODO: add anything we actually hit while building -->
 
 ## Evaluation
@@ -152,7 +167,7 @@ Sample outputs: [`samples/`](samples/). <!-- TODO(phase 9) -->
 - Search quality depends on Tavily; niche topics may return thin results.
 - Free-tier LLM rate limits can slow or fail runs.
 - Paywalled or JS-rendered pages cannot be fetched.
-- No conversation memory; each question is independent.
+- Gemini fallback is not implemented: its OpenAI-compatible endpoint timed out during testing, so Groq is the only provider.
 
 ## Future improvements
 - Async/parallel tool calls and caching.
