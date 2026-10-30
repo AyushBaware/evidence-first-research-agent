@@ -1,0 +1,91 @@
+{
+  "question": "Find 5 Indian B2B SaaS startups in HR tech and summarize their positioning",
+  "short_answer": "Low confidence: The five Indian B2B HR‑tech SaaS startups are Ekincare (Hyderabad, founded 2015, Series B), TraqCheck (Delhi, founded 2020, Series A), Darwinbox (headquartered in San Francisco, founded 2015, Series D), TurboHire (Hyderabad, founded 2019, Series A) and Param (Hyderabad, founded 2017, Seed). All focus on delivering HR software solutions to businesses. Their funding stages range from seed to Series D, showing varied growth phases.",
+  "key_findings": [
+    {
+      "claim": "Ekincare is a Hyderabad‑based HR SaaS startup founded in 2015 and currently at Series B stage.",
+      "source_id": "S1",
+      "quote": "Ekincare Key facts about Ekincare - Founded Year: 2015 - Location: Hyderabad (India) - Stage: Series B",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "TraqCheck is a Delhi‑based HR SaaS startup founded in 2020 and currently at Series A.",
+      "source_id": "S2",
+      "quote": "TraqCheck Key facts about TraqCheck - Founded Year: 2020 - Location: Delhi (India) - Stage: Series A",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Darwinbox is a HR SaaS company founded in 2015, headquartered in San Francisco, and has reached Series D funding.",
+      "source_id": "S1",
+      "quote": "Darwinbox Key facts about Darwinbox - Founded Year: 2015 - Location: San Francisco (United States) - Stage: Series D",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "TurboHire is a Hyderabad‑based HR SaaS startup founded in 2019 and operating at Series A.",
+      "source_id": "S1",
+      "quote": "TurboHire Key facts about TurboHire - Founded Year: 2019 - Location: Hyderabad (India) - Stage: Series A",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Param is a Hyderabad‑based HR SaaS startup founded in 2017 and currently at Seed stage.",
+      "source_id": "S1",
+      "quote": "Param Key facts about Param - Founded Year: 2017 - Location: Hyderabad (India) - Stage: Seed",
+      "verified": true,
+      "support": "supported"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://tracxn.com/d/explore/hr-saas-startups-in-hyderabad-india/__8i3GZrZZNUyl_KLP37CnvVcmVj62Dq5R4l1kvQxMPPI",
+      "title": "List of 247 HR SaaS Startups in Hyderabad, India & Market Trends (Sep 2026) - Tracxn",
+      "domain": "tracxn.com",
+      "snippet": "| College | Total Funding |\n --- |\n| IIT Madras | $172M |\n| Indian Institute Of Management–Lucknow | $144M |\n| Duke University | $28M |\n| IIT Bombay | $9.02M |\n| IIT Delhi | $9.02M |\n| IIM Calcutta | $357K |\n| Indian School of Business | $200K |\n| University of California (Berkeley) | $125K |\n| BITS Pilani \n| IIM Ahmedabad \n\n## Top News in HR SaaS in Hyderabad\n\n## FAQs about HR SaaS sector in Hyderabad\n\nAccel Partners\nPartech\nIN-Q-TEL - US\nFujitsu\nTenity\nStanford [...] 10 new startups have been ",
+      "text": "",
+      "relevance": 0.8,
+      "flags": [
+        "kind:independent_analysis"
+      ]
+    },
+    {
+      "id": "S2",
+      "url": "https://tracxn.com/d/explore/hr-saas-startups-in-delhi-india/__Z3FHrXoBqK8ND6ipTYVjCbArQAWGFY-Yp9je9v8CTnk",
+      "title": "List of 210 HR SaaS Startups in Delhi, India & Market Trends (Sep 2026) - Tracxn",
+      "domain": "tracxn.com",
+      "snippet": "Most number of HR SaaS startups in Delhi have been founded by alumni from IIT Delhi, IIT Kanpur and Indian School of Business.\n\n| College | No. of companies |\n --- |\n| IIT Delhi | 8 |\n| IIT Kanpur | 3 |\n| Indian School of Business | 3 |\n| BITS Pilani | 2 |\n| University of California (Los Angeles) | 2 |\n| University of Pennsylvania | 2 |\n| IIT BHU | 1 |\n| Stanford University | 1 |\n| Wharton School | 1 |\n\n### Total funding in HR SaaS companies founded by alumni from top colleges in Delhi [...] | C",
+      "text": "",
+      "relevance": 0.8,
+      "flags": [
+        "kind:independent_analysis"
+      ]
+    }
+  ],
+  "confidence": "low",
+  "confidence_reasons": [
+    "5 of 5 drafted findings were verified in the source text and judged supported by their quote (100%).",
+    "They rest on 5 distinct quote(s) from 1 distinct site(s): tracxn.com.",
+    "1 of those site(s) are not vendor marketing or press releases.",
+    "Not higher because medium needs 50%+ supported, 3+ distinct quotes, 2+ sites."
+  ],
+  "limitations": [
+    "Sources only list startups in Hyderabad and Delhi, omitting other major Indian HR SaaS players.",
+    "No detailed product or market positioning information is provided beyond founding year, location, and funding stage.",
+    "The Tracxn lists may be biased toward companies that have disclosed funding information.",
+    "The data is current as of September 2026; later developments are not captured.",
+    "3 candidate source(s) were dropped (quarantine, low relevance or cost cap); see the trace.",
+    "Assumption: \"Top\" is interpreted as most notable by funding, customer base, or media visibility",
+    "Assumption: HR tech includes recruitment, payroll, performance management, and employee engagement solutions",
+    "Assumption: All information is current up to the research date (2026‑10‑30)",
+    "Quote verification is an exact-match check and the support check is an LLM judgment; neither guarantees that a claim is true."
+  ],
+  "next_steps": [
+    "Verify each startup's product offerings and target customer segments through their websites or press releases.",
+    "Check more recent funding rounds or market reports to confirm current valuation and growth trajectory.",
+    "Compare these startups against other notable Indian HR SaaS firms (e.g., Zoho People, greytHR) for market relevance.",
+    "Gather customer testimonials or case studies to better understand positioning and value proposition."
+  ]
+}

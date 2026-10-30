@@ -1,0 +1,20 @@
+- id: q1_vector_db
+  kind: generic comparison
+  question: "Compare the top 3 open-source vector databases for a startup building RAG products"
+  expected: "Names 3 databases, grounded findings from 2+ sites, medium or high confidence."
+- id: q2_hr_tech
+  kind: Indian market
+  question: "Find 5 Indian B2B SaaS startups in HR tech and summarize their positioning"
+  expected: "Names several Indian HR-tech startups with positioning. Coverage of 5 may fall short, and the answer should say so."
+- id: q3_collections
+  kind: Predixion domain
+  question: "How do AI agents help with loan collections in retail lending in India?"
+  expected: "Grounded findings on collections use cases. Confidence depends on how many independent sites are found."
+- id: q4_no_evidence
+  kind: unanswerable
+  question: "What was the exact 2031 market share of Qdrant among Indian startups?"
+  expected: "Should NOT give a confident number. Expect low confidence or an insufficient-evidence answer."
+- id: q5_gibberish
+  kind: edge case
+  question: "asdkj qwpoe zxmnc lkjhg"
+  expected: "Ideal: refuse or ask for clarification. Known gap: there is no input guard, so we expect a low-confidence answer."

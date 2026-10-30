@@ -1,0 +1,27 @@
+{
+  "id": "q4_no_evidence",
+  "kind": "unanswerable",
+  "question": "What was the exact 2031 market share of Qdrant among Indian startups?",
+  "expected": "Should NOT give a confident number. Expect low confidence or an insufficient-evidence answer.",
+  "agent": {
+    "latency_s": 59.3,
+    "tokens": 3601,
+    "confidence": "low",
+    "sources": 0,
+    "claimed_quotes": 0,
+    "valid_quotes": 0,
+    "final_findings": 0,
+    "short_answer": "Insufficient verified evidence to answer this question reliably.",
+    "trace": "traces\\20261030-164801-2cf773.jsonl"
+  },
+  "baseline": {
+    "latency_s": 1.6,
+    "tokens": 670,
+    "sources": 0,
+    "claimed_quotes": 0,
+    "valid_quotes": 0,
+    "unreachable_urls": 0,
+    "short_answer": "There is no publicly available data on Qdrant's market share among Indian startups for the year 2031.",
+    "trace": "traces\\20261030-164900-3ce95b.jsonl"
+  }
+}

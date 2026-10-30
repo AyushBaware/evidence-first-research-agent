@@ -70,6 +70,9 @@ def compute_confidence(findings: list[Finding], total: int, sources: list[Source
         level, needs = "low", "medium needs 50%+ supported, 3+ distinct quotes, 2+ sites"
     if needs:
         reasons.append(f"Not higher because {needs}.")
+        if level == "high" and any("snippet_only" in by_id[i].flags for i in cited):
+            level = "medium"
+            reasons.append("Capped at medium because some evidence comes from search snippets, not full pages.")
     if not judged and level == "high":
         level = "medium"
         reasons.append("Capped at medium because the claim-support check was unavailable.")

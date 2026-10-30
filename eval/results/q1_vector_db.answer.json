@@ -1,0 +1,100 @@
+{
+  "question": "Compare the top 3 open-source vector databases for a startup building RAG products",
+  "short_answer": "Milvus stands out with the largest open‑source community (over 42,000 GitHub stars) and the broadest set of indexing algorithms, including HNSW, IVF, and DiskANN. Qdrant provides very low query latency (15‑25 ms P95 for HNSW) and focuses on strong single‑node performance while also supporting clustering. The findings do not provide information about a third open‑source vector database.",
+  "key_findings": [
+    {
+      "claim": "Qdrant delivers low query latency of 15‑25 ms P95 for HNSW index.",
+      "source_id": "S3",
+      "quote": "Query Latency (P95) - Qdrant: 15-25ms for HNSW index",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Milvus has the largest open‑source community, with over 42,000 GitHub stars.",
+      "source_id": "S1",
+      "quote": "Milvus is the most widely adopted open-source vector database, with the largest community in the category (42,000+ stars on the Milvus GitHub reposi",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Milvus provides the highest indexing throughput of up to 15,000 vectors per second depending on index type.",
+      "source_id": "S3",
+      "quote": "Milvus: 10,000-15,000 vectors/second (varies significantly by index type)",
+      "verified": true,
+      "support": "partial"
+    },
+    {
+      "claim": "Weaviate includes native hybrid search that combines vector and keyword scoring.",
+      "source_id": "S3",
+      "quote": "Weaviate combines vector search with knowledge graphs, using HNSW indexing with additional features like hybrid search (combining vector and keyword search).",
+      "verified": true,
+      "support": "partial"
+    },
+    {
+      "claim": "Milvus supports the widest range of indexing algorithms, including HNSW, IVF, and DiskANN.",
+      "source_id": "S3",
+      "quote": "Milvus offers the most comprehensive indexing options, supporting HNSW, IVF (Inverted File), DiskANN, and several other algorithms.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Qdrant’s architecture emphasizes single‑node performance while also offering clustering capabilities.",
+      "source_id": "S3",
+      "quote": "Qdrant's architecture emphasizes single-node performance while offering clustering capabilities.",
+      "verified": true,
+      "support": "supported"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S3",
+      "url": "https://onidel.com/blog/vector-database-benchmarks-vps",
+      "title": "Onidel Cloud",
+      "domain": "onidel.com",
+      "snippet": "Qdrant: 15-25ms for HNSW index\n Milvus: 20-35ms (HNSW), 45-80ms (IVF), 10-20ms (DiskANN on NVMe)\n Weaviate: 25-40ms for HNSW with hybrid search disabled\n\n### Indexing Throughput\n\n Qdrant: 8,000-12,000 vectors/second\n Milvus: 10,000-15,000 vectors/second (varies significantly by index type)\n Weaviate: 6,000-9,000 vectors/second\n\nThese benchmarks show Qdrant leading in consistent low latency, while Milvus offers the highest peak throughput for bulk indexing operations. [...] Disk Storage:\n\n Qdrant",
+      "text": "",
+      "relevance": 0.9,
+      "flags": [
+        "kind:independent_analysis"
+      ]
+    },
+    {
+      "id": "S1",
+      "url": "https://iternal.ai/insights/best-vector-databases-2026",
+      "title": "Best Vector Databases 2026: Pinecone vs Weaviate vs Milvus",
+      "domain": "iternal.ai",
+      "snippet": "Milvus is the most widely adopted open-source vector database in 2026, with the largest community (42,000+ GitHub stars), billion-scale indexing, and Kubernetes-native deployment. Weaviate is the strongest alternative when you want native hybrid search and built-in vectorization, Qdrant offers Rust-based performance with efficient quantization for cost-sensitive workloads, and Chroma is the simplest for local development. All four can be self-hosted, including in air-gapped environments, and [..",
+      "text": "",
+      "relevance": 0.6,
+      "flags": [
+        "kind:independent_analysis"
+      ]
+    }
+  ],
+  "confidence": "medium",
+  "confidence_reasons": [
+    "4 of 6 drafted findings were verified in the source text and judged supported by their quote (67%).",
+    "They rest on 4 distinct quote(s) from 2 distinct site(s): iternal.ai, onidel.com.",
+    "2 of those site(s) are not vendor marketing or press releases.",
+    "Not higher because high needs 80%+ supported, 4+ distinct quotes, 3+ sites, 2+ independent sites."
+  ],
+  "limitations": [
+    "Cost information for Qdrant, Milvus, and Weaviate is not provided in the sources",
+    "Metadata‑filtering capabilities are discussed generally but not tied to a specific database in the sources",
+    "LLM connector support and detailed API specifications are not covered",
+    "Licensing details for Qdrant and Weaviate are missing",
+    "Documentation quality and ease of deployment (Docker/K8s) are not described",
+    "3 candidate source(s) were dropped (quarantine, low relevance or cost cap); see the trace.",
+    "Assumption: \"Top 3\" is interpreted as the three most widely adopted and actively maintained open‑source vector databases in 2026",
+    "Assumption: RAG refers to retrieval‑augmented generation use cases with large language models",
+    "Assumption: Startup constraints include limited ops resources and need for rapid scaling",
+    "2 finding(s) are only partially supported by their quote and do not count toward confidence.",
+    "Quote verification is an exact-match check and the support check is an LLM judgment; neither guarantees that a claim is true."
+  ],
+  "next_steps": [
+    "Run cost‑model calculations for self‑hosting each database on typical cloud VPS or Kubernetes environments",
+    "Benchmark metadata‑filtering performance for Qdrant, Milvus, and Weaviate using realistic RAG queries",
+    "Evaluate available LLM connector libraries or plugins for each database to ensure seamless integration",
+    "Deploy sample RAG pipelines with Docker/Kubernetes for each database to assess operational complexity"
+  ]
+}

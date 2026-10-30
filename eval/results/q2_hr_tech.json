@@ -1,0 +1,27 @@
+{
+  "id": "q2_hr_tech",
+  "kind": "Indian market",
+  "question": "Find 5 Indian B2B SaaS startups in HR tech and summarize their positioning",
+  "expected": "Names several Indian HR-tech startups with positioning. Coverage of 5 may fall short, and the answer should say so.",
+  "agent": {
+    "latency_s": 189.2,
+    "tokens": 11712,
+    "confidence": "low",
+    "sources": 2,
+    "claimed_quotes": 5,
+    "valid_quotes": 5,
+    "final_findings": 5,
+    "short_answer": "Low confidence: The five Indian B2B HR\u2011tech SaaS startups are Ekincare (Hyderabad, founded 2015, Series\u202fB), TraqCheck (Delhi, founded 2020, Series\u202fA), Darwinbox (headquartered in San\u202fFrancisco, founded 2015, Series\u202fD), TurboHire (Hyderabad, founded 2019, Series\u202fA) and Param (Hyderabad, founded 2017, Seed). All focus on delivering HR software solutions to businesses. Their funding stages range from seed to Series\u202fD, showing varied growth phases.",
+    "trace": "traces\\20261030-164132-34d6f0.jsonl"
+  },
+  "baseline": {
+    "latency_s": 9.6,
+    "tokens": 1615,
+    "sources": 5,
+    "claimed_quotes": 5,
+    "valid_quotes": 0,
+    "unreachable_urls": 1,
+    "short_answer": "India\u2019s HR\u2011tech landscape includes several B2B SaaS startups that target enterprise and mid\u2011market customers with cloud\u2011based talent management, payroll and employee experience solutions. Notable players such as Darwinbox, ZingHR, greytHR, PeopleHum and Keka each position themselves around integrated, AI\u2011enabled HR suites for scaling organizations.",
+    "trace": "traces\\20261030-164441-556fb5.jsonl"
+  }
+}

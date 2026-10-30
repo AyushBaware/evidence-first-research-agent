@@ -1,0 +1,27 @@
+{
+  "id": "q3_collections",
+  "kind": "Predixion domain",
+  "question": "How do AI agents help with loan collections in retail lending in India?",
+  "expected": "Grounded findings on collections use cases. Confidence depends on how many independent sites are found.",
+  "agent": {
+    "latency_s": 188.4,
+    "tokens": 12156,
+    "confidence": "medium",
+    "sources": 2,
+    "claimed_quotes": 6,
+    "valid_quotes": 6,
+    "final_findings": 5,
+    "short_answer": "The findings only describe regulatory requirements for AI\u2011driven collection calls, such as RBI\u2019s recovery conduct rules, permitted calling hours, TRAI\u2019s number and DND rules, and audit\u2011trail and disclosure obligations. They do not explain how AI agents help with loan collections.",
+    "trace": "traces\\20261030-164451-790a4b.jsonl"
+  },
+  "baseline": {
+    "latency_s": 1.9,
+    "tokens": 916,
+    "sources": 0,
+    "claimed_quotes": 0,
+    "valid_quotes": 0,
+    "unreachable_urls": 0,
+    "short_answer": "AI agents in Indian retail lending automate and enhance loan collection by using predictive analytics to identify delinquent borrowers, automating reminders via SMS/WhatsApp, and enabling intelligent routing of cases to human agents for personalized follow\u2011up. These tools improve recovery rates, reduce operational costs, and ensure compliance with RBI regulations on fair debt collection practices.",
+    "trace": "traces\\20261030-164759-4b95d6.jsonl"
+  }
+}

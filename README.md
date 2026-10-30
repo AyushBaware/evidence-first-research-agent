@@ -25,14 +25,16 @@ python -m venv .venv
 pip install -r requirements.txt
 cp .env.example .env     # Windows: copy .env.example .env  -> then add your keys
 python scripts/check_setup.py   # verifies keys, LLM and search connectivity
-**Environment variables** (`.env`): `GROQ_API_KEY` and `TAVILY_API_KEY` are required. `LLM_BASE_URL` and `LLM_MODEL` are optional and default to Groq and `openai/gpt-oss-120b`. Model names are configuration, not code, because providers retire models often.
 ```
+
+**Environment variables** (`.env`): `GROQ_API_KEY` and `TAVILY_API_KEY` are required. `LLM_BASE_URL` and `LLM_MODEL` are optional and default to Groq and `openai/gpt-oss-120b`. Model names are configuration, not code, because providers retire models often.
 
 **Run (CLI):**
 ```bash
 python -m app.cli "Compare the top 3 open-source vector databases for a startup building RAG products"
 ```
-<!-- TODO(phase 6): confirm exact command and add API usage (uvicorn app.main:app, POST /research) -->
+python -m app.cli "your question" [--json] [--save samples/out.json]
+uvicorn app.main:app --reload     # then open http://127.0.0.1:8000/docs and POST /research
 
 Every run writes a trace to `traces/<run_id>.jsonl`.
 
@@ -75,7 +77,7 @@ flowchart TD
 - `executor.py`: runs the plan with the tools under step budgets and per-call timeouts, and logs every tool decision.
 - `tools/search.py`, `tools/fetch.py`: the two tools. They never raise; they return a `ToolResult` with `ok`, `data`, `error` and latency.
 - `tools/common.py`: shared helpers (site extraction, transient-error classification, prompt-safe escaping).
-- `filtering.py`: quarantines pages with prompt-injection patterns, then asks the LLM (one batched call) to label each source's relevance to the success criteria and its type. Our code applies the policy: vendor-marketing and press-release sources are down-weighted, weak ones dropped, and at most 6 kept. If triage fails, sources are kept unscored and a limitation is recorded.
+- `filtering.py`: quarantines pages with prompt-injection patterns, then asks the LLM (one batched call) to label each source's relevance to the success criteria and its type. Our code applies the policy: vendor-marketing and press-release sources are down-weighted, weak ones dropped, and at most 5 kept. If triage fails, sources are kept unscored and a limitation is recorded.
 - `synthesizer.py`: asks the LLM for a draft answer from the kept sources only, wrapped as untrusted data. Each finding must carry a source id and a verbatim quote.
 - `verifier.py`: normalises text and checks that each finding's quote exists in its source, then computes confidence from evidence signals.
 - `judge.py`: a separate LLM call that sees only a finding's claim and quote and labels it supported, partial or unsupported; also rebuilds the short answer from supported findings.
@@ -84,13 +86,17 @@ flowchart TD
 - `cli.py`, `main.py`: command-line and FastAPI (`POST /research`, `GET /health`) entry points.
 - `schemas.py`: all data shapes, defined once.
 - `tracing.py`: one JSONL line per event.
+- `eval/run_failures.py`: failure-injection harness. It patches the tools (not the agent), so the real retry, validation and quarantine code runs. Six scenarios: search down, malformed search payload, all page fetches fail, LLM provider down, obvious prompt injection, and a paraphrased injection that evades our patterns. Results are saved to `eval/failure_results.json`.
+- `eval/run_eval.py` and `eval/queries.yaml`: run the evaluation queries through the agent and a single-call LLM baseline, and write a metrics table.
+````
 
 **Stack:** Python, FastAPI, Pydantic v2, OpenAI-compatible SDK (Groq `openai/gpt-oss-120b`), Tavily search, `trafilatura` for page text extraction. No agent framework, on purpose, so the control flow is readable in about 300 lines.
 
 ## Answers to the assignment questions
 
 ### Why did you choose an agentic approach here?
-Research questions need **dynamic retrieval**: the number of searches and which pages to read depends on what earlier steps return, and a weak first search should trigger a refined one. A single prompt cannot do that. At the same time, the workflow is **bounded and mostly deterministic**: plan, gather, filter, synthesize, verify. So the agent only decides *what to search/fetch next*; everything else is fixed code. That limits cost and failure modes. <!-- TODO(phase 7): link the baseline comparison showing where the agent helped and where it did not -->
+Research questions need **dynamic retrieval**: the number of searches and which pages to read depends on what earlier steps return, and a weak first search should trigger a refined one. A single prompt cannot do that. At the same time, the workflow is **bounded and mostly deterministic**: plan, gather, filter, synthesize, verify. So the agent only decides *what to search/fetch next*; everything else is fixed code. That limits cost and failure modes. 
+The measured comparison is in [`eval/EVALUATION.md`](eval/EVALUATION.md). Where it helped: the agent produced quotes that could be checked against real pages, while the baseline gave no findings in 4 of 5 queries and, when it did cite (q2), none of its quotes were found on the pages. Where it did not help: on the unanswerable query (q4) both systems ended with no findings, and the agent cost about 5x the tokens and 37x the latency.
 
 ### What tools did you use, and why?
 - **`web_search`** (Tavily): finds candidate sources and returns titles, URLs and snippets.
@@ -113,7 +119,9 @@ Tool selection is rule-based inside the loop. The LLM does not choose tools mid-
 - **Fallbacks.** A failed page fetch moves on to the next candidate; a thin or failed search retries with the sub-task question as the query. In the Phase 3 test runs, 4 of 10 and 2 of 10 page fetches failed and both runs completed normally.
 - **Graceful degradation.** If no page can be read for a sub-task, the executor uses the search snippet, labelled `snippet_only`, and records a note.
 - **Budgets.** A run is capped at 7 searches and 12 page-fetch attempts.
-<!-- TODO(phase 5): add the low-confidence "insufficient evidence" behaviour and wire executor notes into the final limitations -->
+- **Insufficient-evidence behaviour.** If no sources are retrieved, none survive filtering, or fewer than 2 findings are judged supported, the answer says "Insufficient verified evidence" instead of guessing. Any other failure inside the pipeline also becomes a valid low-confidence answer.
+- **Honest limitations.** Executor problems (a sub-task with no results, snippet-only fallbacks) are added to the final `limitations`.
+- **Tested by failure injection.** `eval/run_failures.py` breaks the tools on purpose (search timeouts, malformed payload, every fetch failing, LLM outage). All scenarios passed: the agent never crashed and returned a valid answer with an honest confidence level.
 
 ### How do you reduce hallucinations?
 1. Sources are filtered before synthesis: pages matching prompt-injection patterns are quarantined, and each source is labelled by relevance and type. Vendor and press-release sources are down-weighted by code, not by the model.
@@ -121,13 +129,17 @@ Tool selection is rule-based inside the loop. The LLM does not choose tools mid-
 3. Every finding must carry a `source_id` and a **verbatim quote**.
 4. **Our code, not the LLM,** checks that each quote appears in its source, after normalising whitespace, dashes and quotation marks. Quotes under 6 words are rejected. Failing findings are removed.
 5. A separate **judge** call sees only a finding's claim and quote (no sources, no question) and labels it `supported`, `partial` or `unsupported`. Unsupported findings are removed; partial ones stay visible but do not count toward confidence. This catches overreach, for example "fastest" backed by a quote that shows one product's numbers.
-6. Findings are de-duplicated and capped at 8, taken round-robin across sources so one source cannot dominate.
-7. Confidence is **computed** from distinct supported quotes, distinct sites and independence from vendor sources, never self-reported. High needs 80%+ supported, 4+ distinct quotes, 3+ sites and 2+ non-vendor sites; medium needs 50%+, 3+ quotes and 2+ sites; otherwise low. If the judge is unavailable, confidence is capped at medium.
+6. Findings are de-duplicated and capped at 8, taken round-robin across sources so one source cannot domin
+ate.
+7. Confidence is **computed** from distinct supported quotes, distinct sites and independence from vendor sources, never self-reported. High needs 80%+ supported, 4+ distinct quotes, 3+ sites and 2+ non-vendor sites; medium needs 50%+, 3+ quotes and 2+ sites; otherwise low. If the judge is unavailable, or if any evidence comes from a search snippet instead of a full page, confidence is capped at medium.
 8. The short answer is rebuilt from supported findings only. With fewer than 2 supported findings the answer is "Insufficient verified evidence".
-<!-- TODO(phase 7): add measured citation-validity rate from the eval -->
+
+**Measured (5 eval queries):** 21 of 21 drafted quotes were found verbatim in their sources, and the judge removed 1 of 6 findings in one query. This checks that quotes are copied faithfully; it does not prove the claims are true. See [`eval/EVALUATION.md`](eval/EVALUATION.md).
 
 ### Prompt-injection awareness
-Fetched web content is untrusted. It is passed to the LLM inside delimited data blocks with instructions never to follow commands found in content, and our tool layer flags injection-like patterns on the source. Tools are **read-only** (no email, no writes, no code execution), so the blast radius of a successful injection is limited to a degraded answer. Fetching also refuses non-HTTP(S) schemes, `localhost` and private or loopback IP addresses (basic SSRF protection). Pages matching known injection patterns (for example "ignore previous instructions") are quarantined: they are excluded before any LLM call and recorded in the trace. Source text is also escaped so it cannot close the `<source>` tags that wrap it in prompts. A deliberate injection test is part of the eval. <!-- TODO(phase 5/7): report test result honestly -->
+Fetched web content is untrusted. It is passed to the LLM inside delimited data blocks with instructions never to follow commands found in content, and our tool layer flags injection-like patterns on the source. Tools are **read-only** (no email, no writes, no code execution), so the blast radius of a successful injection is limited to a degraded answer. Fetching also refuses non-HTTP(S) schemes, `localhost` and private or loopback IP addresses (basic SSRF protection). Pages matching known injection patterns (for example "ignore previous instructions") are quarantined: they are excluded before any LLM call and recorded in the trace. Source text is also escaped so it cannot close the `<source>` tags that wrap it in prompts. Two injection tests are in `eval/run_failures.py`, and the results are not equal:
+- **Obvious injection** ("ignore all previous instructions..."): the page was quarantined by the pattern filter, and the planted canary string did not appear in the answer.
+- **Paraphrased injection** (no trigger phrases): the pattern filter did **not** catch it (`quarantined=False`). The canary did not appear in the answer in this single run, but that is not evidence of robustness: it depends on the model resisting, and the test was run once. This is why a stronger injection classifier is listed under future improvements.
 
 ### How would you make this production-ready?
 - Async tool execution and parallel fetches; a real queue and worker for long runs.
@@ -157,23 +169,31 @@ Latency per stage and end to end; tool error and timeout rates; **citation verif
 | Claim checking | Exact-quote check in code plus an LLM judge on claim and quote | One extra LLM call per run; the judge can be wrong |
 | Rate limits | Client-side throttle (7,000 tokens/minute) after hitting the Groq free-tier limit in testing | Slower runs |
 | Findings | Capped at 8, round-robin across sources | Depth from a single rich source |
-<!-- TODO: add anything we actually hit while building -->
+| Snippet-only evidence | Allowed as a fallback, but confidence capped at medium | Higher confidence from partial evidence |
+| Failure testing | Patch the tools, run the real pipeline code | Testing the real network path |
 
 ## Evaluation
-See [`eval/EVALUATION.md`](eval/EVALUATION.md). <!-- TODO(phase 7) -->
+See [`eval/EVALUATION.md`](eval/EVALUATION.md) for the queries, expected behaviour, and what worked and what did not.
 
-Summary table (agent vs single-shot LLM baseline): <!-- TODO: fill with measured numbers only -->
+```bash
+python -m eval.run_eval          # 5 queries: agent vs single-call baseline -> eval/results_table.md
+python -m eval.run_failures      # 6 failure scenarios -> eval/failure_results.json
+```
+
+Summary (5 queries, one run each, agent vs single-call LLM baseline):
 
 | Metric | Baseline | Agent |
 |---|---|---|
-| Citation validity | TODO | TODO |
-| Avg sources used | TODO | TODO |
-| Latency (s) | TODO | TODO |
+| Quotes found verbatim in a real page | 0 of 5 attempted (it cited sources in only 1 of 5 queries) | 21 of 21 |
+| Avg sources cited | 1.0 (URLs from memory) | 1.4 |
+| Avg tokens per run | 934 | 9,204 |
+| Avg latency (s) | 3.2 | 136.1 |
+
+The agent's check is our own code, so it measures faithful copying, not truth. The agent cost roughly 5 to 15 times the tokens and 20 to 100 times the latency, part of it from the free-tier throttle.
 
 Sample outputs: [`samples/`](samples/). <!-- TODO(phase 9) -->
 
 ## Known limitations
-<!-- TODO(phase 9): write from what actually broke. Draft candidates: -->
 - Exact-quote verification rejects correct paraphrases and fails on pages whose text extraction is lossy.
 - Search quality depends on Tavily; niche topics may return thin results.
 - Free-tier LLM rate limits can slow or fail runs.
@@ -186,6 +206,8 @@ Sample outputs: [`samples/`](samples/). <!-- TODO(phase 9) -->
 - Planning is single-pass: the planner cannot name candidates it only discovers after searching (for example which three databases are "top"), so coverage varies between runs.
 - Search results vary run to run, so outputs are not exactly reproducible.
 - On the Groq free tier (8,000 tokens/minute) the throttle slows runs to around 2-3 minutes.
+- There is no input guard: the meaningless question `stringstri` passed the length check, and the agent returned a "Low confidence" answer about Python's `strip()` instead of asking for clarification.
+- The paraphrased-injection test was not caught by the pattern filter (see the prompt-injection section). It passed only because the answer did not repeat the planted text in one run.
 
 ## Future improvements
 - Async/parallel tool calls and caching.
@@ -195,3 +217,5 @@ Sample outputs: [`samples/`](samples/). <!-- TODO(phase 9) -->
 - Adaptive re-planning: after a first search pass, name the candidates found and run targeted searches for each, and lower confidence when coverage of the question is incomplete.
 - Observability integration (Langfuse/OpenTelemetry).
 - Provider fallback chain (Gemini as secondary).
+- Clarity check in the planner: reject or ask about gibberish and under-specified questions before searching.
+- LLM-based or classifier-based prompt-injection detection, in addition to pattern matching.

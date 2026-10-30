@@ -1,0 +1,27 @@
+{
+  "id": "q5_gibberish",
+  "kind": "edge case",
+  "question": "asdkj qwpoe zxmnc lkjhg",
+  "expected": "Ideal: refuse or ask for clarification. Known gap: there is no input guard, so we expect a low-confidence answer.",
+  "agent": {
+    "latency_s": 64.5,
+    "tokens": 6042,
+    "confidence": "low",
+    "sources": 1,
+    "claimed_quotes": 4,
+    "valid_quotes": 4,
+    "final_findings": 4,
+    "short_answer": "Low confidence: The findings do not provide information to answer the question.",
+    "trace": "traces\\20261030-164902-34bffc.jsonl"
+  },
+  "baseline": {
+    "latency_s": 1.1,
+    "tokens": 612,
+    "sources": 0,
+    "claimed_quotes": 0,
+    "valid_quotes": 0,
+    "unreachable_urls": 0,
+    "short_answer": "The provided text does not correspond to a recognizable research question, so a specific answer cannot be given. It appears to be a random string of characters without clear meaning.",
+    "trace": "traces\\20261030-165007-1dcc63.jsonl"
+  }
+}

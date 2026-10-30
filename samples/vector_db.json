@@ -1,71 +1,71 @@
 {
   "question": "Compare the top 3 open-source vector databases for a startup building RAG products",
-  "short_answer": "Milvus is an open‑source, GPU‑accelerated vector database that can handle billions of vectors at lower cost but requires engineering resources. Weaviate provides a graph‑based vector store with a GraphQL API, modular design, hybrid search (vector + BM25 + metadata filters) and strong documentation. Qdrant is a budget‑conscious, Rust‑based vector database offering the best free tier, native sparse and multi‑vector model support, and excels at real‑time embedding search with rich JSON‑based payload filtering.",
+  "short_answer": "Milvus stands out with the largest open‑source community (over 42,000 GitHub stars) and the broadest set of indexing algorithms, including HNSW, IVF, and DiskANN. Qdrant provides very low query latency (15‑25 ms P95 for HNSW) and focuses on strong single‑node performance while also supporting clustering. The findings do not provide information about a third open‑source vector database.",
   "key_findings": [
     {
-      "claim": "Milvus is an open‑source, GPU‑accelerated vector database optimized for massive scale and high‑throughput serving",
-      "source_id": "S4",
-      "quote": "Milvus (Zilliz Cloud): Open-source, GPU-accelerated vector DB. Optimized for massive scale and high-throughput serving.",
+      "claim": "Qdrant delivers low query latency of 15‑25 ms P95 for HNSW index.",
+      "source_id": "S3",
+      "quote": "Query Latency (P95) - Qdrant: 15-25ms for HNSW index",
       "verified": true,
       "support": "supported"
     },
     {
-      "claim": "Milvus can handle billions of vectors at lower cost but requires engineering resources",
-      "source_id": "S5",
-      "quote": "Milvus / Zilliz Cloud: billions of vectors at lower cost; requires engineering resources.",
+      "claim": "Milvus has the largest open‑source community, with over 42,000 GitHub stars.",
+      "source_id": "S1",
+      "quote": "Milvus is the most widely adopted open-source vector database, with the largest community in the category (42,000+ stars on the Milvus GitHub reposi",
       "verified": true,
       "support": "supported"
     },
     {
-      "claim": "Weaviate is an open‑source graph‑based vector store with a GraphQL API and modular design",
-      "source_id": "S4",
-      "quote": "Weaviate: An open-source graph-based vector store. Features a GraphQL API and a modular design.",
+      "claim": "Milvus provides the highest indexing throughput of up to 15,000 vectors per second depending on index type.",
+      "source_id": "S3",
+      "quote": "Milvus: 10,000-15,000 vectors/second (varies significantly by index type)",
+      "verified": true,
+      "support": "partial"
+    },
+    {
+      "claim": "Weaviate includes native hybrid search that combines vector and keyword scoring.",
+      "source_id": "S3",
+      "quote": "Weaviate combines vector search with knowledge graphs, using HNSW indexing with additional features like hybrid search (combining vector and keyword search).",
+      "verified": true,
+      "support": "partial"
+    },
+    {
+      "claim": "Milvus supports the widest range of indexing algorithms, including HNSW, IVF, and DiskANN.",
+      "source_id": "S3",
+      "quote": "Milvus offers the most comprehensive indexing options, supporting HNSW, IVF (Inverted File), DiskANN, and several other algorithms.",
       "verified": true,
       "support": "supported"
     },
     {
-      "claim": "Qdrant is budget‑conscious, offers the best free tier, and supports native sparse and multi‑vector models",
-      "source_id": "S5",
-      "quote": "Qdrant: budget-conscious teams, best free tier, native sparse (SPLADE, miniCOIL) and ColBERT multi-vector support.",
-      "verified": true,
-      "support": "supported"
-    },
-    {
-      "claim": "Qdrant is an open‑source Rust vector database that excels at real‑time embedding search with rich JSON‑based payload filtering",
-      "source_id": "S4",
-      "quote": "Qdrant: An open-source Rust vector database. Excels at real-time embedding search with rich JSON-based payload filtering.",
-      "verified": true,
-      "support": "supported"
-    },
-    {
-      "claim": "Weaviate provides hybrid search (vector + BM25 + metadata filters) with strong documentation and modular embeddings",
-      "source_id": "S5",
-      "quote": "Weaviate: hybrid search (vector + BM25 + metadata filters) with strong docs and modular embeddings.",
+      "claim": "Qdrant’s architecture emphasizes single‑node performance while also offering clustering capabilities.",
+      "source_id": "S3",
+      "quote": "Qdrant's architecture emphasizes single-node performance while offering clustering capabilities.",
       "verified": true,
       "support": "supported"
     }
   ],
   "sources": [
     {
-      "id": "S4",
-      "url": "https://www.zenml.io/blog/vector-databases-for-rag",
-      "title": "We Tried and Tested 10 Best Vector Databases for RAG Pipelines - ZenML Blog",
-      "domain": "zenml.io",
-      "snippet": "## 4. Weaviate\n\n Screenshot of the Weaviate homepage presenting its open-source AI-native vector database \n\nWeaviate is an open-source, AI-native vector database built with a graph-like class schema. The design helps you scale and provide more flexibility in RAG workflows. It offers a rich feature set, including built-in vectorization modules and advanced search capabilities.\n\n### Features [...] Supports both dense vector similarity and BM25 keyword indexes, allowing RAG applications to combine ",
+      "id": "S3",
+      "url": "https://onidel.com/blog/vector-database-benchmarks-vps",
+      "title": "Onidel Cloud",
+      "domain": "onidel.com",
+      "snippet": "Qdrant: 15-25ms for HNSW index\n Milvus: 20-35ms (HNSW), 45-80ms (IVF), 10-20ms (DiskANN on NVMe)\n Weaviate: 25-40ms for HNSW with hybrid search disabled\n\n### Indexing Throughput\n\n Qdrant: 8,000-12,000 vectors/second\n Milvus: 10,000-15,000 vectors/second (varies significantly by index type)\n Weaviate: 6,000-9,000 vectors/second\n\nThese benchmarks show Qdrant leading in consistent low latency, while Milvus offers the highest peak throughput for bulk indexing operations. [...] Disk Storage:\n\n Qdrant",
       "text": "",
-      "relevance": 0.85,
+      "relevance": 0.9,
       "flags": [
         "kind:independent_analysis"
       ]
     },
     {
-      "id": "S5",
-      "url": "https://www.firecrawl.dev/blog/best-vector-databases",
-      "title": "Best Vector Databases in 2026: A Complete Comparison Guide",
-      "domain": "firecrawl.dev",
-      "snippet": "Performance backs up the convenience. Tests show 7ms p99 latency, which means 99% of your queries return in under 7 milliseconds. Compare that to Elasticsearch's 1600ms for exact kNN in the same benchmark. The serverless tier auto-scales, so you don't provision capacity. You use what you need, pay for what you use. [...] The implementation uses HNSW indexing with scalar and binary quantization. Performance shows sub-50ms query latency at 15.3 million vectors (with quantization, 90-95% accuracy).",
+      "id": "S1",
+      "url": "https://iternal.ai/insights/best-vector-databases-2026",
+      "title": "Best Vector Databases 2026: Pinecone vs Weaviate vs Milvus",
+      "domain": "iternal.ai",
+      "snippet": "Milvus is the most widely adopted open-source vector database in 2026, with the largest community (42,000+ GitHub stars), billion-scale indexing, and Kubernetes-native deployment. Weaviate is the strongest alternative when you want native hybrid search and built-in vectorization, Qdrant offers Rust-based performance with efficient quantization for cost-sensitive workloads, and Chroma is the simplest for local development. All four can be self-hosted, including in air-gapped environments, and [..",
       "text": "",
-      "relevance": 0.8,
+      "relevance": 0.6,
       "flags": [
         "kind:independent_analysis"
       ]
@@ -73,26 +73,28 @@
   ],
   "confidence": "medium",
   "confidence_reasons": [
-    "6 of 6 drafted findings were verified in the source text and judged supported by their quote (100%).",
-    "They rest on 6 distinct quote(s) from 2 distinct site(s): firecrawl.dev, zenml.io.",
+    "4 of 6 drafted findings were verified in the source text and judged supported by their quote (67%).",
+    "They rest on 4 distinct quote(s) from 2 distinct site(s): iternal.ai, onidel.com.",
     "2 of those site(s) are not vendor marketing or press releases.",
     "Not higher because high needs 80%+ supported, 4+ distinct quotes, 3+ sites, 2+ independent sites."
   ],
   "limitations": [
-    "The sources do not include quantitative benchmark results (throughput, latency) or specific hardware requirements for any database",
-    "Community health metrics such as GitHub activity, issue response time, or documentation quality are not detailed in the sources",
-    "Sources are marketing‑oriented blog posts and may emphasize strengths while downplaying weaknesses",
-    "No direct comparison of deployment options (cloud, on‑prem, Kubernetes) is provided",
+    "Cost information for Qdrant, Milvus, and Weaviate is not provided in the sources",
+    "Metadata‑filtering capabilities are discussed generally but not tied to a specific database in the sources",
+    "LLM connector support and detailed API specifications are not covered",
+    "Licensing details for Qdrant and Weaviate are missing",
+    "Documentation quality and ease of deployment (Docker/K8s) are not described",
     "3 candidate source(s) were dropped (quarantine, low relevance or cost cap); see the trace.",
-    "Assumption: \"Top\" is interpreted as most popular and well‑supported based on GitHub stars, recent benchmarks, and community activity",
-    "Assumption: The startup requires self‑hosted, open‑source solutions that integrate easily with LLM pipelines for RAG",
-    "Assumption: Timeframe is current (2026) and no proprietary licenses are considered",
+    "Assumption: \"Top 3\" is interpreted as the three most widely adopted and actively maintained open‑source vector databases in 2026",
+    "Assumption: RAG refers to retrieval‑augmented generation use cases with large language models",
+    "Assumption: Startup constraints include limited ops resources and need for rapid scaling",
+    "2 finding(s) are only partially supported by their quote and do not count toward confidence.",
     "Quote verification is an exact-match check and the support check is an LLM judgment; neither guarantees that a claim is true."
   ],
   "next_steps": [
-    "Run standardized RAG workload benchmarks on Milvus, Weaviate, and Qdrant to gather latency, throughput, and hardware utilization data",
-    "Assess community health by reviewing GitHub repositories for stars, forks, recent commits, and issue resolution rates",
-    "Prototype integration of each database with the startup's LLM stack to evaluate API ease‑of‑use and metadata filtering capabilities",
-    "Estimate total cost of ownership for self‑hosting versus managed options based on required scaling and operational effort"
+    "Run cost‑model calculations for self‑hosting each database on typical cloud VPS or Kubernetes environments",
+    "Benchmark metadata‑filtering performance for Qdrant, Milvus, and Weaviate using realistic RAG queries",
+    "Evaluate available LLM connector libraries or plugins for each database to ensure seamless integration",
+    "Deploy sample RAG pipelines with Docker/Kubernetes for each database to assess operational complexity"
   ]
 }

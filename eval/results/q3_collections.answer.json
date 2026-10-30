@@ -1,0 +1,92 @@
+{
+  "question": "How do AI agents help with loan collections in retail lending in India?",
+  "short_answer": "The findings only describe regulatory requirements for AI‑driven collection calls, such as RBI’s recovery conduct rules, permitted calling hours, TRAI’s number and DND rules, and audit‑trail and disclosure obligations. They do not explain how AI agents help with loan collections.",
+  "key_findings": [
+    {
+      "claim": "AI voice agents handle pre‑due and early overdue EMI reminder calls and capture promise‑to‑pay outcomes.",
+      "source_id": "S6",
+      "quote": "An AI voice agent can handle pre-due and early overdue EMI calls for an NBFC.",
+      "verified": true,
+      "support": "partial"
+    },
+    {
+      "claim": "RBI’s recovery conduct rules apply equally to AI voice agents as to human callers.",
+      "source_id": "S7",
+      "quote": "RBI's recovery conduct rules apply to AI voice agents exactly as they apply to human callers.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "RBI recovery conduct rules require AI collection calls to occur only between 8 a.m. and 7 p.m. and prohibit persistent calling.",
+      "source_id": "S6",
+      "quote": "no recovery calls before 8:00 a.m. or after 7:00 p.m. and no persistent calling;",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "TRAI mandates AI‑driven collection calls use a 140‑series number, DND scrubbing and stay within permitted calling hours.",
+      "source_id": "S7",
+      "quote": "TRAI requires all AI-driven collections calls to use a 140-series number, scrub against the DND registry, and stay within permitted calling hours.",
+      "verified": true,
+      "support": "supported"
+    },
+    {
+      "claim": "Audit‑trail and borrower‑disclosure requirements are enforced by RBI’s 2025 Digital Lending Directions for AI collection calls.",
+      "source_id": "S7",
+      "quote": "RBI's 2025 Digital Lending Directions require documented evidence of every contact attempt, consent record, and agent disclosure.",
+      "verified": true,
+      "support": "supported"
+    }
+  ],
+  "sources": [
+    {
+      "id": "S6",
+      "url": "https://www.revrag.ai/resources/blog/ai-voice-agents-debt-collection-india-nbfc",
+      "title": "AI Voice Agents for Debt Collection: What Indian NBFCs Should Check Before Automating EMI Calls | RevRag AI Blog",
+      "domain": "revrag.ai",
+      "snippet": "## How to Compare Cost\n\nPer-minute and per-call prices are easy to compare and say little about recovery. Compare vendors on the cost per account that returns to current, or per rupee collected, in the pilot cohort. Include platform fees, telephony, integration work, and the time your team spends on escalations, and set it against your own cost for the same bucket today. Our guide to AI calling agent cost in India covers the components in more detail. [...] RevRag AI offers an AI Calling Agent f",
+      "text": "",
+      "relevance": 0.6,
+      "flags": [
+        "kind:vendor_marketing"
+      ]
+    },
+    {
+      "id": "S7",
+      "url": "https://www.squadstack.ai/blog/rbi-and-trai-compliant-collections-how-ai-voice-agents-stay-in-the-rules",
+      "title": "RBI and TRAI Compliant Collections: How AI Voice Agents",
+      "domain": "squadstack.ai",
+      "snippet": "Oct 21, 2026 — Under RBI's Digital Lending Directions (2025) and the Fair Practices Code, collections contact must happen only between 8 AM and 7 PM. The 2025 ...Read more",
+      "text": "",
+      "relevance": 0.6,
+      "flags": [
+        "kind:vendor_marketing"
+      ]
+    }
+  ],
+  "confidence": "medium",
+  "confidence_reasons": [
+    "4 of 6 drafted findings were verified in the source text and judged supported by their quote (67%).",
+    "They rest on 4 distinct quote(s) from 2 distinct site(s): revrag.ai, squadstack.ai.",
+    "0 of those site(s) are not vendor marketing or press releases.",
+    "Not higher because high needs 80%+ supported, 4+ distinct quotes, 3+ sites, 2+ independent sites."
+  ],
+  "limitations": [
+    "The sources do not provide quantitative impact metrics such as recovery‑rate improvement, delinquency reduction or cost savings.",
+    "Information comes mainly from vendor‑focused blogs and regulatory summaries, which may be biased toward promoting compliance features rather than performance outcomes.",
+    "Only voice‑based AI agents are described; other AI roles like predictive scoring or chatbots are not covered in the provided texts.",
+    "Regulatory guidance is high‑level and does not detail implementation specifics for retail‑loan collections.",
+    "4 candidate source(s) were dropped (quarantine, low relevance or cost cap); see the trace.",
+    "Assumption: Retail lending includes personal loans, credit cards, and small‑business loans",
+    "Assumption: Timeframe considered up to the current year 2026",
+    "1 of 6 drafted findings were removed: 0 had quotes that could not be verified in the source, and 1 had quotes that did not support the claim.",
+    "1 finding(s) are only partially supported by their quote and do not count toward confidence.",
+    "Quote verification is an exact-match check and the support check is an LLM judgment; neither guarantees that a claim is true."
+  ],
+  "next_steps": [
+    "Seek case studies or internal data from Indian lenders that quantify the impact of AI collection agents on recovery rates and costs.",
+    "Review the full RBI circulars and TRAI regulations to map exact technical compliance requirements for AI‑driven collections.",
+    "Conduct a pilot deployment of an AI voice‑agent platform with built‑in audit‑trail and DND controls, measuring outcomes against a control group.",
+    "Evaluate vendor certifications and third‑party audits to verify claimed compliance with RBI and TRAI rules."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "question": "What was the exact 2031 market share of Qdrant among Indian startups?",
+  "short_answer": "Insufficient verified evidence to answer this question reliably.",
+  "key_findings": [],
+  "sources": [],
+  "confidence": "low",
+  "confidence_reasons": [
+    "No usable sources remained after filtering."
+  ],
+  "limitations": [
+    "No usable sources remained after filtering.",
+    "6 candidate source(s) were dropped (quarantine, low relevance or cost cap); see the trace."
+  ],
+  "next_steps": [
+    "Retry the question, possibly rephrased.",
+    "Inspect the trace to see which stage failed: traces\\20261030-164801-2cf773.jsonl"
+  ]
+}

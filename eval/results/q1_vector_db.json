@@ -1,0 +1,27 @@
+{
+  "id": "q1_vector_db",
+  "kind": "generic comparison",
+  "question": "Compare the top 3 open-source vector databases for a startup building RAG products",
+  "expected": "Names 3 databases, grounded findings from 2+ sites, medium or high confidence.",
+  "agent": {
+    "latency_s": 178.9,
+    "tokens": 12508,
+    "confidence": "medium",
+    "sources": 2,
+    "claimed_quotes": 6,
+    "valid_quotes": 6,
+    "final_findings": 6,
+    "short_answer": "Milvus stands out with the largest open\u2011source community (over 42,000 GitHub stars) and the broadest set of indexing algorithms, including HNSW, IVF, and DiskANN. Qdrant provides very low query latency (15\u201125\u202fms P95 for HNSW) and focuses on strong single\u2011node performance while also supporting clustering. The findings do not provide information about a third open\u2011source vector database.",
+    "trace": "traces\\20261030-163831-48873e.jsonl"
+  },
+  "baseline": {
+    "latency_s": 1.9,
+    "tokens": 857,
+    "sources": 0,
+    "claimed_quotes": 0,
+    "valid_quotes": 0,
+    "unreachable_urls": 0,
+    "short_answer": "The leading open\u2011source vector databases for a startup building Retrieval\u2011Augmented Generation (RAG) products are Milvus, Qdrant, and Weaviate. Milvus offers high scalability and strong community support with GPU acceleration, making it ideal for large\u2011scale embeddings. Qdrant focuses on low\u2011latency, on\u2011disk storage with built\u2011in payload filtering, which simplifies relevance tuning. Weaviate provides a schema\u2011driven, hybrid (vector + keyword) search with integrated LLM modules, enabling rapid prototyping of RAG pipelines. Choosing among them depends on whether the priority is raw performance (Milvus), flexible filtering (Qdrant), or out\u2011of\u2011the\u2011box LLM integration (Weaviate).",
+    "trace": "traces\\20261030-164130-a6d0f0.jsonl"
+  }
+}
